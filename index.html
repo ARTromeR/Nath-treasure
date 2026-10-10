@@ -235,6 +235,72 @@
     animation: pop .7s cubic-bezier(.2, .85, .25, 1.35) both;
   }
 
+  #question.answered {
+    max-height: 760px;
+  }
+
+  /* Reproductor: cargado desde antes, pero oculto hasta decir que sí. */
+  #music {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height .8s ease, opacity .8s ease .2s;
+  }
+
+  #question.answered #music {
+    max-height: 360px;
+    opacity: 1;
+  }
+
+  #musicCard {
+    width: min(100%, 340px);
+    margin: 18px auto 4px;
+    padding: 10px;
+    border-radius: 14px;
+    background: #1d1820;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .28);
+  }
+
+  #musicCard .label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 4px 10px;
+    color: #f3ecef;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  #musicCard .label small {
+    display: block;
+    color: #b9aeb4;
+    font-weight: 400;
+  }
+
+  #musicCard .eq {
+    color: var(--red);
+    font-size: 18px;
+  }
+
+  #playerBox {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #playerBox iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
   #question.answered #choices,
   #question.answered p {
     display: none;
@@ -332,6 +398,15 @@
           <button id="noBtn" class="choice" type="button" tabindex="-1">No</button>
         </div>
         <div id="answer" role="status">Mañana cena usted y yo, mi amor ❤</div>
+        <div id="music">
+          <div id="musicCard">
+            <div class="label">
+              <span class="eq">♫</span>
+              <span>Summertime<small>My Chemical Romance · Danger Days (2010)</small></span>
+            </div>
+            <div id="playerBox"><div id="player"></div></div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -656,16 +731,99 @@
     showQuestion();
   }
 
+  /* ================== Canción ==================
+     "Summertime" desde el segundo 25 con el reproductor de YouTube.
+     Se carga al aparecer la pregunta para que, al pulsar "Sí",
+     playVideo() se ejecute dentro del mismo toque (necesario en iPhone). */
+
+  /* Visualizer oficial de la banda (se deja incrustar); de respaldo, el audio oficial. */
+  const SONG_IDS = ["oj1q7iQ1v2s", "LW7FxWXt3ok"];
+  const SONG_START = 25;
+
+  let player = null;
+  let playerReady = false;
+  let wantsMusic = false;
+  let songIndex = 0;
+  let startedOnce = false;
+
+  function loadPlayer() {
+    if (player) return;
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+      return;
+    }
+    if (document.getElementById("ytApi")) return;
+    window.onYouTubeIframeAPIReady = createPlayer;
+    const script = document.createElement("script");
+    script.id = "ytApi";
+    script.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(script);
+  }
+
+  function createPlayer() {
+    if (player) return;
+    player = new YT.Player("player", {
+      videoId: SONG_IDS[songIndex],
+      host: "https://www.youtube-nocookie.com",
+      playerVars: {
+        start: SONG_START,
+        playsinline: 1,
+        rel: 0,
+        modestbranding: 1
+      },
+      events: {
+        onReady: () => {
+          playerReady = true;
+          if (wantsMusic) playSong();
+        },
+        onStateChange: event => {
+          /* Si ella le da play a mano desde el principio, saltar al 25. */
+          if (event.data === YT.PlayerState.PLAYING && !startedOnce) {
+            startedOnce = true;
+            if (player.getCurrentTime() < SONG_START - 2) player.seekTo(SONG_START, true);
+          }
+        },
+        onError: () => {
+          /* Si un video no se deja incrustar, probar con el otro. */
+          if (songIndex + 1 < SONG_IDS.length) {
+            songIndex++;
+            player.loadVideoById({ videoId: SONG_IDS[songIndex], startSeconds: SONG_START });
+          }
+        }
+      }
+    });
+  }
+
+  function playSong() {
+    wantsMusic = true;
+    if (!playerReady) {
+      loadPlayer();
+      return;
+    }
+    player.seekTo(SONG_START, true);
+    player.unMute();
+    player.setVolume(100);
+    player.playVideo();
+  }
+
+  function stopSong() {
+    wantsMusic = false;
+    startedOnce = false;
+    if (playerReady) player.pauseVideo();
+  }
+
   /* ================== Pregunta final ================== */
 
   function showQuestion() {
     question.classList.add("show");
     question.setAttribute("aria-hidden", "false");
+    loadPlayer();
     setTimeout(() => scrollToBottomOf(question), 450);
   }
 
   function resetQuestion() {
     question.classList.remove("show", "answered");
+    stopSong();
     question.setAttribute("aria-hidden", "true");
     noBtn.classList.remove("runaway");
     document.getElementById("noSpacer")?.remove();
@@ -788,11 +946,13 @@
   }
 
   yesBtn.addEventListener("click", () => {
+    playSong();
     heartBurst();
     noBtn.style.display = "none";
     document.getElementById("noSpacer")?.remove();
     question.classList.add("answered");
     setTimeout(() => scrollToBottomOf(question), 100);
+    setTimeout(() => scrollToBottomOf(question), 900);
   });
 
   /* ================== Animación ================== */
