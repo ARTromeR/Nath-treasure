@@ -549,11 +549,17 @@
     opacity: 1;
   }
 
-  /* Cerati pequeño, sin cuadrícula, sobre el papel de la carta */
+  /* Cerati neoretro: escenario pequeño con resplandor de neón */
   #ceratiWrap {
     display: none;
-    width: 128px;
-    margin: 20px auto 0;
+    width: fit-content;
+    margin: 22px auto 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 2px #2a1640,
+      0 0 18px rgba(255, 62, 165, .45),
+      0 0 34px rgba(62, 240, 255, .25);
     -webkit-user-select: none;
     user-select: none;
   }
@@ -564,8 +570,7 @@
 
   #ceratiSheet {
     display: block;
-    width: 100%;
-    height: 100%;
+    image-rendering: pixelated;
   }
 
   #songCaption {
@@ -830,44 +835,6 @@
   const DECOR_ROWS = 9;
   /* Gerard es el tercero; su figura mide 11 columnas. */
   const GERARD = { col: FIGURE_STARTS[2], cols: 11, row: DECOR_ROWS, rows: ART.length - DECOR_ROWS };
-
-  /* Cerati tocando la guitarra (escena secreta). */
-  const CERATI_ART = [
-    ".......g.............g..........",
-    "......gGg...........gGg.........",
-    ".......g.............g..........",
-    "....OO...................DDD....",
-    "....O........BBBBB.......D.D....",
-    "....O.......BMMMMMB......D.D....",
-    "...OO......BMMMMMMMB....DD.D....",
-    "...OO.....BMMMMMMMMMB...DDDD....",
-    "..........BMMMMMMMMMB...........",
-    ".....g....BMMSSSSSMMB...........",
-    "....gGg...BMSSSSSSSMB...........",
-    ".....g....BMSBSSSBSMB......BGB..",
-    "..........BMSSSSSSSMB......BBB..",
-    "...OO......BMSSLSSMB.......GBG..",
-    "...O........BSSSSSB........N....",
-    "...O.........BBBBB.......gNK....",
-    "..OO........BBWWWBB.....NKK.....",
-    "..OO.......BBBWDWBBB..SNK.......",
-    "..........BBBBWDWBBBBBBK.....OO.",
-    "..........BBBBBDBBBgNKS......O..",
-    "..........BBBBBDBNNKK........O..",
-    "..........BBBBBBgKKBB.......OO..",
-    "......BBB.BBBBNNKBBBB.......OO..",
-    ".....BRRRBRRBNKKBBBBB...........",
-    "....BRRRRRSRRBBBBBBBB...........",
-    "....BRWWRRRRRBBBBBBB............",
-    "....BRRRRRWWRBB.BBBB............",
-    "....BRRoRRRRRBB.BBB.............",
-    ".....BRRRRRRBBB.BBB.............",
-    "......BBBBBBBBB.BBB.............",
-    "............BBB.BBB.............",
-    "...........BBBB.BBBB............",
-    "................................",
-    "................................"
-  ];
 
   const COLORS = {
     B: "#11100f",
@@ -1139,16 +1106,438 @@
     );
   }
 
-  /* Cerati: contorno, luego colores, y la guitarra y las notas al final. */
-  function orderCerati(list) {
-    const rank = { B: 0, M: 1, S: 1, L: 1, W: 1, D: 2, R: 3, N: 3, K: 3, g: 4, G: 4, o: 3, O: 4 };
-    return list.sort((a, b) =>
-      (rank[a.value] ?? 2) - (rank[b.value] ?? 2) || a.y - b.y || a.x - b.x
-    );
+  const band = createSheet($("sheet"), wrapper, ART, orderBand);
+  /* ================== Cerati neoretro animado ==================
+     Sprite de 48 × 58 píxeles dibujado en un lienzo pequeño y escalado sin
+     suavizado. Rulos, chaqueta negra con rombos plateados y hombreras,
+     guitarra negra con filete crema y micrófono delante. Estética synthwave:
+     sol de neón, borde de luz cian/magenta y líneas de televisor CRT. */
+
+  function createNeoCerati(canvas) {
+    const W = 48;
+    const H = 58;
+    const SCALE = 4;
+    const FPS = 8;
+
+    const PAL = {
+      k: "#07050c", /* contorno / boca */
+      H: "#2b1a14", /* pelo */
+      h: "#55342a", /* brillo del pelo */
+      S: "#f0b48c", /* piel */
+      s: "#c98563", /* sombra de piel */
+      J: "#16131d", /* chaqueta */
+      j: "#454a63", /* rombos plateados */
+      P: "#c3c9d8", /* hombreras */
+      p: "#7d8499",
+      G: "#0c0c12", /* guitarra */
+      b: "#ecdcb0", /* filete crema */
+      w: "#d9dbe2", /* pastillas / clavijas */
+      n: "#3a2418", /* mástil */
+      f: "#ecdcb0", /* marcadores */
+      L: "#1d1c26", /* pantalón de cuero */
+      l: "#666b82", /* brillo del cuero */
+      m: "#9aa0b4", /* micrófono */
+      M: "#5d6275"  /* pie del micrófono */
+    };
+
+    const CYAN = "#3ef0ff";
+    const PINK = "#ff3ea5";
+
+    const ctx = canvas.getContext("2d");
+    const layer = (w, h) => {
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      return c;
+    };
+    const bg = layer(W, H);
+    const rim = layer(W, H);
+    const fig = layer(W, H);
+    const notes = layer(W, H);
+
+    function blank() {
+      return Array.from({ length: H }, () => Array(W).fill(null));
+    }
+
+    /* Dibuja el personaje para el cuadro t (0..7). */
+    function character(t) {
+      const g = blank();
+      const set = (x, y, c) => {
+        x = Math.round(x);
+        y = Math.round(y);
+        if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = c;
+      };
+      const rect = (x, y, w, h, c) => {
+        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) set(xx, yy, c);
+      };
+      const ellipse = (cx, cy, rx, ry, c) => {
+        for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
+          for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+            const dx = (x - cx) / rx;
+            const dy = (y - cy) / ry;
+            if (dx * dx + dy * dy <= 1) set(x, y, c);
+          }
+        }
+      };
+      const line = (x0, y0, x1, y1, c, th = 1) => {
+        const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+        for (let i = 0; i <= steps; i++) {
+          const x = x0 + (x1 - x0) * i / steps;
+          const y = y0 + (y1 - y0) * i / steps;
+          rect(Math.round(x - (th - 1) / 2), Math.round(y - (th - 1) / 2), th, th, c);
+        }
+      };
+
+      const bob = [0, 0, 1, 1, 0, 0, 1, 1][t];   /* cabeceo al ritmo */
+      const strum = [0, 1, 2, 1, 0, 1, 2, 1][t]; /* mano que rasguea */
+      const fret = t < 4 ? 0.62 : 0.5;           /* mano que se desliza por el mástil */
+
+      /* Pie del micrófono */
+      line(10, 25, 10, 52, "M");
+      line(10, 52, 6, 55, "M");
+      line(10, 52, 14, 55, "M");
+      line(10, 25, 15, 20, "M");
+
+      /* Piernas: pantalón de cuero con brillo */
+      rect(16, 41, 6, 12, "L");
+      rect(23, 41, 6, 12, "L");
+      for (let y = 42; y < 52; y++) {
+        if (y % 4 !== 0) set(17, y, "l");
+        if (y % 4 !== 2) set(27, y, "l");
+      }
+      rect(15, 52, 7, 3, "k");
+      rect(23, 52, 7, 3, "k");
+
+      /* Torso: chaqueta con trama de rombos */
+      for (let y = 22; y <= 41; y++) {
+        const half = y < 27 ? 11 : Math.round(11 - (y - 27) * .22);
+        for (let x = 22 - half; x <= 22 + half; x++) {
+          const diamond = (x + y) % 5 === 0 || (x - y + 100) % 5 === 0;
+          set(x, y, diamond ? "j" : "J");
+        }
+      }
+      rect(19, 21, 7, 2, "J"); /* cuello alto */
+
+      /* Hombreras plateadas */
+      ellipse(13, 23.5, 3.5, 2.5, "P");
+      ellipse(31, 23.5, 3.5, 2.5, "P");
+      line(10, 25, 16, 25, "p");
+      line(28, 25, 34, 25, "p");
+
+      /* Brazo que rasguea (lado izquierdo de la imagen) */
+      line(12, 26, 10, 32, "J", 3);
+      line(10, 32, 17, 33 + strum, "J", 3);
+
+      /* Guitarra tipo superstrat negra con filete crema, inclinada
+         en la dirección del mástil (como en la foto). */
+      const n0 = { x: 25, y: 33 };
+      const n1 = { x: 41, y: 20 };
+      const ang = Math.atan2(n1.y - n0.y, n1.x - n0.x);
+      const ux = Math.cos(ang), uy = Math.sin(ang);   /* a lo largo del mástil */
+      const vx = -uy, vy = ux;                        /* perpendicular */
+      const tilted = (cx, cy, ra, rb, c) => {
+        for (let y = Math.floor(cy - 10); y <= cy + 10; y++) {
+          for (let x = Math.floor(cx - 10); x <= cx + 10; x++) {
+            const a = ((x - cx) * ux + (y - cy) * uy) / ra;
+            const b = ((x - cx) * vx + (y - cy) * vy) / rb;
+            if (a * a + b * b <= 1) set(x, y, c);
+          }
+        }
+      };
+      const at = (a, b) => ({ x: 19 + ux * a + vx * b, y: 37.5 + uy * a + vy * b });
+      const hornA = at(6, -3.6);
+      const hornB = at(5, 3.6);
+      [["b", 0], ["G", 1]].forEach(([c, d]) => {
+        tilted(19, 37.5, 8 - d, 5.6 - d, c);
+        tilted(hornA.x, hornA.y, 3.6 - d, 1.8 - d * .6, c);
+        tilted(hornB.x, hornB.y, 2.6 - d, 1.6 - d * .6, c);
+      });
+      /* pastillas (perpendiculares a las cuerdas) y puente */
+      [-1, 2.5].forEach(a => {
+        for (let b = -1.5; b <= 1.5; b += .5) {
+          const q = at(a, b);
+          set(q.x, q.y, "w");
+        }
+      });
+      for (let b = -1.5; b <= 1.5; b += .5) {
+        const q = at(-4.5, b);
+        set(q.x, q.y, "p");
+      }
+      const knob = at(-3, 4);
+      set(knob.x, knob.y, "b");
+
+      /* Mástil y clavijero (arriba a la derecha) */
+      line(n0.x, n0.y, n1.x, n1.y, "n", 2);
+      [.25, .45, .65, .85].forEach(k => set(n0.x + (n1.x - n0.x) * k, n0.y + (n1.y - n0.y) * k, "f"));
+      line(41, 20, 45, 16, "G", 3);
+      line(40, 21, 45, 15, "b");
+      set(43, 16, "w");
+      set(45, 18, "w");
+      set(41, 18, "w");
+
+      /* Mano que rasguea sobre las cuerdas */
+      rect(17, 33 + strum, 3, 2, "S");
+      set(19, 35 + strum, "s");
+
+      /* Brazo y mano en el mástil */
+      const hx = n0.x + (n1.x - n0.x) * fret;
+      const hy = n0.y + (n1.y - n0.y) * fret;
+      line(32, 26, 36, 31, "J", 3);
+      line(36, 31, hx + 1, hy + 2, "J", 3);
+      rect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3, "S");
+      set(Math.round(hx) + 1, Math.round(hy) + 1, "s");
+
+      /* Cuello y cabeza (cabecean) */
+      rect(20, 20, 5, 2, "s");
+      const by = bob;
+      ellipse(22, 11 + by, 9.5, 8, "H");
+      for (let a = 0; a < 360; a += 32) {
+        const r = a * Math.PI / 180;
+        ellipse(22 + Math.cos(r) * 9.5, 11 + by + Math.sin(r) * 7.5, 2, 2, "H");
+      }
+      ellipse(22, 15 + by, 5, 6, "S");
+      /* rulos sobre la frente y a los lados */
+      ellipse(22, 9 + by, 6, 2.5, "H");
+      ellipse(18, 10 + by, 2, 2, "H");
+      ellipse(26, 10 + by, 2, 2, "H");
+      rect(16, 11 + by, 2, 6, "H");
+      rect(27, 11 + by, 2, 6, "H");
+      /* brillos de los rulos */
+      for (let y = 2; y < 20; y++) {
+        for (let x = 11; x < 34; x++) {
+          const yy = y + by;
+          if (g[yy] && g[yy][x] === "H" && (x * 7 + y * 3) % 6 === 0) g[yy][x] = "h";
+        }
+      }
+      /* cara cantando: ojos entrecerrados, boca abierta */
+      rect(19, 14 + by, 2, 1, "k");
+      rect(24, 14 + by, 2, 1, "k");
+      set(22, 16 + by, "s");
+      rect(21, 18 + by, 3, 1, "k");
+      set(22, 19 + by, t % 2 ? "k" : "s");
+      rect(18, 20 + by, 9, 1, "s");
+
+      /* Micrófono delante de la boca (no cabecea) */
+      rect(15, 18, 3, 2, "m");
+      set(16, 17, "w");
+      set(17, 20, "M");
+
+      return g;
+    }
+
+    /* Borde de luz neón alrededor de la silueta */
+    function rimOf(g) {
+      const out = blank();
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (g[y][x]) continue;
+          const near = (g[y][x - 1]) || (g[y][x + 1]) || (g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]);
+          if (near) out[y][x] = x < 22 ? CYAN : PINK;
+        }
+      }
+      return out;
+    }
+
+    const frames = [];
+    for (let t = 0; t < 8; t++) {
+      const g = character(t);
+      frames.push({ g, rim: rimOf(g) });
+    }
+
+    function paintGrid(c, grid, map) {
+      const cx = c.getContext("2d");
+      cx.clearRect(0, 0, W, H);
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const v = grid[y][x];
+          if (!v) continue;
+          cx.fillStyle = map ? map[v] : v;
+          cx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+
+    /* Fondo synthwave: cielo, estrellas, sol a rayas y horizonte */
+    function paintBackground(time) {
+      const cx = bg.getContext("2d");
+      for (let y = 0; y < H; y++) {
+        const k = y / H;
+        const r = Math.round(18 + 30 * k);
+        const gg = Math.round(8 + 6 * k);
+        const b = Math.round(36 + 28 * k);
+        cx.fillStyle = `rgb(${r},${gg},${b})`;
+        cx.fillRect(0, y, W, 1);
+      }
+      /* estrellas que titilan */
+      [[4, 4], [40, 6], [7, 14], [44, 30], [3, 34], [36, 3], [30, 9]].forEach(([x, y], i) => {
+        const on = Math.sin(time / 400 + i * 1.7) > -.2;
+        cx.fillStyle = on ? (i % 2 ? CYAN : "#ffffff") : "#3a2a55";
+        cx.fillRect(x, y, 1, 1);
+      });
+      /* sol con franjas que bajan lentamente */
+      const sun = { x: 24, y: 38, r: 18 };
+      const shift = Math.floor(time / 180) % 4;
+      for (let y = sun.y - sun.r; y <= sun.y + sun.r; y++) {
+        if (y > sun.y && (y + shift) % 4 === 0) continue;
+        const half = Math.floor(Math.sqrt(Math.max(0, sun.r * sun.r - (y - sun.y) * (y - sun.y))));
+        const k = (y - (sun.y - sun.r)) / (sun.r * 2);
+        const r = 255;
+        const gg = Math.round(215 - 150 * k);
+        const b = Math.round(110 + 50 * k);
+        cx.fillStyle = `rgb(${r},${gg},${b})`;
+        cx.fillRect(sun.x - half, y, half * 2 + 1, 1);
+      }
+      /* horizonte y suelo */
+      cx.fillStyle = "#12081e";
+      cx.fillRect(0, 46, W, H - 46);
+      cx.fillStyle = PINK;
+      cx.fillRect(0, 46, W, 1);
+      cx.fillStyle = "rgba(255, 62, 165, .35)";
+      cx.fillRect(0, 47, W, 1);
+    }
+
+    /* Notas musicales que salen de la guitarra */
+    const NOTE = [".##", ".#.", ".#.", "##.", "##."];
+    const flying = [];
+    let lastNote = 0;
+
+    function paintNotes(time) {
+      const cx = notes.getContext("2d");
+      cx.clearRect(0, 0, W, H);
+      if (time - lastNote > 1100) {
+        lastNote = time;
+        const colors = [CYAN, PINK, "#ffd36e"];
+        flying.push({ born: time, x: 24 + (flying.length % 3) * 6, color: colors[flying.length % 3] });
+      }
+      for (let i = flying.length - 1; i >= 0; i--) {
+        const n = flying[i];
+        const age = (time - n.born) / 1000;
+        const y = Math.round(30 - age * 9);
+        const x = Math.round(n.x + Math.sin(age * 3) * 2 + age * 2);
+        if (y < -6) {
+          flying.splice(i, 1);
+          continue;
+        }
+        cx.globalAlpha = Math.max(0, Math.min(1, y / 12));
+        cx.fillStyle = n.color;
+        NOTE.forEach((row, ry) => [...row].forEach((c, rx) => {
+          if (c === "#") cx.fillRect(x + rx, y + ry, 1, 1);
+        }));
+      }
+      cx.globalAlpha = 1;
+    }
+
+    let dpr = 1;
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = W * SCALE * dpr;
+      canvas.height = H * SCALE * dpr;
+      canvas.style.width = W * SCALE + "px";
+      canvas.style.height = H * SCALE + "px";
+    }
+
+    function render(time, frameIndex, reveal) {
+      const S = SCALE * dpr;
+      const fr = frames[frameIndex];
+      paintBackground(time);
+      paintGrid(rim, fr.rim);
+      paintGrid(fig, fr.g, PAL);
+      paintNotes(time);
+
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      /* Aparición tipo televisor: se revela de arriba abajo */
+      const visibleRows = Math.ceil(H * reveal);
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, visibleRows * S);
+      ctx.clip();
+
+      ctx.drawImage(bg, 0, 0, W * S, H * S);
+      /* borde de neón con resplandor */
+      ctx.shadowBlur = 6 * dpr;
+      ctx.shadowColor = PINK;
+      ctx.drawImage(rim, 0, 0, W * S, H * S);
+      ctx.shadowColor = CYAN;
+      ctx.drawImage(rim, 0, 0, W * S, H * S);
+      ctx.shadowBlur = 0;
+      ctx.drawImage(fig, 0, 0, W * S, H * S);
+      ctx.shadowBlur = 5 * dpr;
+      ctx.shadowColor = "#ffffff";
+      ctx.drawImage(notes, 0, 0, W * S, H * S);
+      ctx.shadowBlur = 0;
+
+      /* Líneas de CRT */
+      ctx.fillStyle = "rgba(0, 0, 0, .18)";
+      for (let y = 0; y < H * S; y += Math.max(2, Math.round(S / 2))) {
+        ctx.fillRect(0, y, W * S, Math.max(1, dpr));
+      }
+      ctx.restore();
+
+      /* Línea de barrido brillante mientras aparece */
+      if (reveal < 1) {
+        ctx.fillStyle = "rgba(62, 240, 255, .9)";
+        ctx.fillRect(0, visibleRows * S - S / 2, W * S, Math.max(2, S / 2));
+      }
+    }
+
+    let raf = 0;
+    let running = false;
+    let start = 0;
+    let lastFrameTime = 0;
+    let frameIndex = 0;
+    let revealDuration = 1400;
+    let visible = true;
+
+    function loop(now) {
+      if (!running) return;
+      raf = requestAnimationFrame(loop);
+      if (!visible) return;
+      /* ~12 cuadros por segundo para el fondo; el personaje a 8 */
+      if (now - lastFrameTime < 1000 / 12) return;
+      lastFrameTime = now;
+      const elapsed = now - start;
+      frameIndex = Math.floor(elapsed / (1000 / FPS)) % frames.length;
+      const reveal = revealDuration ? Math.min(1, elapsed / revealDuration) : 1;
+      render(now, frameIndex, reveal);
+    }
+
+    /* Pausar cuando no está en pantalla para ahorrar batería. */
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(entries => {
+        visible = entries[0].isIntersecting;
+      }).observe(canvas);
+    }
+
+    resize();
+
+    return {
+      play({ animated = true } = {}) {
+        resize();
+        cancelAnimationFrame(raf);
+        if (!animated) {
+          running = false;
+          render(performance.now(), 0, 1);
+          return;
+        }
+        running = true;
+        start = performance.now();
+        lastFrameTime = 0;
+        revealDuration = 1400;
+        raf = requestAnimationFrame(loop);
+      },
+      skipReveal() {
+        revealDuration = 0;
+      },
+      stop() {
+        running = false;
+        cancelAnimationFrame(raf);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
   }
 
-  const band = createSheet($("sheet"), wrapper, ART, orderBand);
-  const cerati = createSheet($("ceratiSheet"), $("ceratiWrap"), CERATI_ART, orderCerati, { paper: false });
+  const cerati = createNeoCerati($("ceratiSheet"));
 
   /* ================== Mensaje principal ================== */
 
@@ -1692,7 +2081,7 @@
     ceratiWrap.classList.remove("show");
     songCaption.classList.remove("show");
     buildLetter();
-    cerati.reset();
+    cerati.stop();
   }
 
   /* Se llama dentro del gesto de soltar la aguja: aquí arranca la canción. */
@@ -1714,8 +2103,6 @@
 
     letter.classList.add("show");
     ceratiWrap.classList.add("show");
-    cerati.resize();
-    cerati.drawGrid();
 
     if (reduceMotion) {
       finishLetter();
@@ -1724,11 +2111,9 @@
 
     setTimeout(() => letter.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
 
-    /* Cerati se dibuja mientras se escribe la carta. */
-    const typing = typeLetter(run);
-    const estimated = letterChars.length * 26;
-    const drawing = cerati.animate(Math.max(8000, estimated), () => run !== secretRun);
-    await Promise.all([typing, drawing]);
+    /* Cerati aparece y toca la guitarra mientras se escribe la carta. */
+    cerati.play();
+    await typeLetter(run);
     if (run !== secretRun) return;
     songCaption.classList.add("show");
   }
@@ -1759,7 +2144,8 @@
   function finishLetter() {
     secretRun++;
     letterChars.forEach(span => span.classList.add("on"));
-    cerati.paintAll();
+    if (reduceMotion) cerati.play({ animated: false });
+    else cerati.skipReveal();
     songCaption.classList.add("show");
   }
 
@@ -1853,7 +2239,6 @@
 
   window.addEventListener("resize", () => {
     band.resize();
-    if (secret.classList.contains("show")) cerati.resize();
   });
 
   band.resize();
