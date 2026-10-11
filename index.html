@@ -395,7 +395,8 @@
   }
 
   #projectCard.vanish,
-  #replayBtn.vanish {
+  #replayBtn.vanish,
+  #noBtn.vanish {
     opacity: 0;
     transform: scale(.94);
     filter: blur(6px);
@@ -414,6 +415,8 @@
 
   /* ================== Escena secreta ================== */
   #secret {
+    position: relative;
+    z-index: 1;
     display: none;
     width: min(94vw, 640px);
     flex-direction: column;
@@ -546,19 +549,17 @@
     opacity: 1;
   }
 
+  /* Cerati pequeño, sin cuadrícula, sobre el papel de la carta */
   #ceratiWrap {
     display: none;
-    width: min(100%, 420px);
-    margin-top: 22px;
-    background: var(--paper);
-    box-shadow: 0 22px 34px rgba(0, 0, 0, .45);
+    width: 128px;
+    margin: 20px auto 0;
     -webkit-user-select: none;
     user-select: none;
   }
 
   #ceratiWrap.show {
     display: block;
-    animation: rise .9s ease both;
   }
 
   #ceratiSheet {
@@ -568,9 +569,10 @@
   }
 
   #songCaption {
-    margin: 14px 0 0;
-    color: #cdbfc6;
-    font-size: 14px;
+    margin: 8px 0 0;
+    color: #8c7f76;
+    font-size: 13px;
+    text-align: center;
     opacity: 0;
     transition: opacity 1s ease;
   }
@@ -579,16 +581,22 @@
     opacity: 1;
   }
 
-  #backBtn {
-    margin-top: 18px;
-    border: 1px solid rgba(255, 255, 255, .18);
-    border-radius: 999px;
-    padding: 10px 17px;
-    color: #f3ecef;
-    background: rgba(255, 255, 255, .08);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
+  /* Fondo nuevo para la escena secreta: todo lo anterior desaparece
+     y la página cambia de ambiente. */
+  #secretBg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 50% 18%, rgba(201, 160, 60, .22) 0, rgba(201, 160, 60, 0) 55%),
+      radial-gradient(circle at 50% 40%, #2b1d17 0, #160f0d 65%, #0b0807 100%);
+    opacity: 0;
+    transition: opacity 1.4s ease;
+  }
+
+  body.secret-mode #secretBg {
+    opacity: 1;
   }
 
   @keyframes rise {
@@ -628,9 +636,6 @@
       padding: 22px 20px 24px;
     }
 
-    #ceratiWrap {
-      width: calc(100vw - 48px);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -746,14 +751,14 @@
     <article id="letter" aria-live="polite">
       <h2>¡Descubriste el secreto! ❤️</h2>
       <div id="letterText"></div>
+      <div id="ceratiWrap">
+        <canvas id="ceratiSheet" role="img" aria-label="Pixel art de Gustavo Cerati tocando una guitarra roja"></canvas>
+      </div>
+      <p id="songCaption">♪ Lago en el cielo · Gustavo Cerati</p>
     </article>
-
-    <div id="ceratiWrap">
-      <canvas id="ceratiSheet" role="img" aria-label="Pixel art de Gustavo Cerati tocando una guitarra roja"></canvas>
-    </div>
-    <p id="songCaption">♪ Lago en el cielo · Gustavo Cerati</p>
-    <button id="backBtn" type="button">↩ Volver</button>
   </section>
+
+  <div id="secretBg" aria-hidden="true"></div>
 
   <div class="music" id="music1" aria-hidden="true">
     <div class="musicHint">♫ Toca ▶ para escuchar nuestra canción</div>
@@ -947,8 +952,8 @@
   /* ================== Hoja cuadriculada con pixel art ==================
      Sirve tanto para la banda como para Cerati. */
 
-  function createSheet(canvas, sheetWrapper, art, orderCells) {
-    const ctx = canvas.getContext("2d", { alpha: false });
+  function createSheet(canvas, sheetWrapper, art, orderCells, { paper = true } = {}) {
+    const ctx = canvas.getContext("2d", { alpha: !paper });
     const rows = art.length;
     const cols = art[0].length;
 
@@ -977,6 +982,12 @@
 
       ctx.save();
       ctx.clearRect(0, 0, width, height);
+
+      /* Sin papel ni cuadrícula: solo el dibujo (Cerati). */
+      if (!paper) {
+        ctx.restore();
+        return;
+      }
 
       /* Papel cálido */
       ctx.fillStyle = "#f7f5ee";
@@ -1137,7 +1148,7 @@
   }
 
   const band = createSheet($("sheet"), wrapper, ART, orderBand);
-  const cerati = createSheet($("ceratiSheet"), $("ceratiWrap"), CERATI_ART, orderCerati);
+  const cerati = createSheet($("ceratiSheet"), $("ceratiWrap"), CERATI_ART, orderCerati, { paper: false });
 
   /* ================== Mensaje principal ================== */
 
@@ -1579,7 +1590,6 @@
   const letterText = $("letterText");
   const ceratiWrap = $("ceratiWrap");
   const songCaption = $("songCaption");
-  const backBtn = $("backBtn");
 
   const PIVOT = { x: 350, y: 55 };
   const ARM_PLAY = 28;      /* grados: la aguja queda sobre el vinilo */
@@ -1656,12 +1666,13 @@
       document.body.classList.remove("shake");
     }
 
-    projectCard.classList.add("vanish");
-    replayBtn.classList.add("vanish");
+    const oldScene = [projectCard, replayBtn, noBtn];
+    oldScene.forEach(el => el.classList.add("vanish"));
+    document.body.classList.add("secret-mode");
     await sleep(reduceMotion ? 0 : 900);
 
-    projectCard.style.display = "none";
-    replayBtn.style.display = "none";
+    oldScene.forEach(el => el.style.display = "none");
+    document.querySelectorAll(".floatHeart").forEach(el => el.remove());
     resetSecret();
     secret.classList.add("show");
     window.scrollTo({ top: 0 });
@@ -1803,19 +1814,6 @@
   });
 
   turntable.addEventListener("contextmenu", event => event.preventDefault());
-
-  backBtn.addEventListener("click", () => {
-    secretRun++;
-    lago.stop();
-    secret.classList.remove("visible", "show");
-    projectCard.style.display = "";
-    replayBtn.style.display = "";
-    projectCard.classList.remove("vanish");
-    replayBtn.classList.remove("vanish");
-    secretOpen = false;
-    window.scrollTo({ top: 0 });
-    band.resize();
-  });
 
   /* ================== Animación principal ================== */
 
