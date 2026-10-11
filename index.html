@@ -463,13 +463,149 @@
   }
 
   #vinyl {
-    transform-origin: 170px 150px;
-    animation: spin 1.8s linear infinite;
-    animation-play-state: paused;
+    cursor: grab;
   }
 
-  #turntable.playing #vinyl {
-    animation-play-state: running;
+  #turntable.scrubbing #vinyl {
+    cursor: grabbing;
+  }
+
+  #deck {
+    position: relative;
+  }
+
+  /* Indicador al rebobinar / adelantar */
+  #scrubTag {
+    position: absolute;
+    left: 42.5%;
+    top: 50%;
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(12, 8, 6, .82);
+    border: 1px solid rgba(230, 207, 138, .6);
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.85);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  #scrubTag.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  /* Controles del tocadiscos */
+  #deckControls {
+    display: none;
+    width: min(100%, 520px);
+    margin-top: 14px;
+    padding: 12px 14px 10px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .1);
+    color: #f3ecef;
+  }
+
+  #deckControls.show {
+    display: block;
+    animation: rise .7s ease both;
+  }
+
+  .deckRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .deckButtons {
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  .deckBtn {
+    width: 46px;
+    height: 46px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    color: #f3ecef;
+    background: rgba(255, 255, 255, .08);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .deckBtn:active {
+    transform: scale(.94);
+  }
+
+  #deckPlay {
+    width: 56px;
+    height: 56px;
+    color: #1a0f0a;
+    background: #e6cf8a;
+    border-color: #e6cf8a;
+    font-size: 17px;
+  }
+
+  .deckTime {
+    min-width: 36px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: #cdbfc6;
+  }
+
+  #deckSeek {
+    flex: 1;
+    height: 22px;
+    margin: 0;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  #deckSeek::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e6cf8a var(--p, 0%), rgba(255, 255, 255, .2) var(--p, 0%));
+  }
+
+  #deckSeek::-moz-range-track {
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e6cf8a var(--p, 0%), rgba(255, 255, 255, .2) var(--p, 0%));
+  }
+
+  #deckSeek::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(230, 207, 138, .5);
+  }
+
+  #deckSeek::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .deckTip {
+    margin: 8px 0 0;
+    color: #a8999f;
+    font-size: 12px;
+    text-align: center;
   }
 
   #arm {
@@ -641,12 +777,16 @@
       padding: 22px 20px 24px;
     }
 
+    #deckControls {
+      width: calc(100% - 28px);
+    }
+
   }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     #sheetWrapper, #question, #noBtn, #secret { transition: none; }
-    #vinyl, #needlePulse { animation: none; }
+    #needlePulse { animation: none; }
   }
 </style>
 </head>
@@ -751,6 +891,22 @@
           </g>
         </g>
       </svg>
+      <div id="scrubTag" aria-hidden="true"></div>
+    </div>
+
+    <div id="deckControls" aria-label="Controles del tocadiscos">
+      <div class="deckRow">
+        <span class="deckTime" id="deckTime">0:00</span>
+        <input id="deckSeek" type="range" min="0" max="300" value="0" step="1" aria-label="Posición de la canción">
+        <span class="deckTime" id="deckTotal">0:00</span>
+      </div>
+      <div class="deckRow deckButtons">
+        <button class="deckBtn" id="deckStart" type="button" aria-label="Volver al inicio">⏮</button>
+        <button class="deckBtn" id="deckBack" type="button" aria-label="Rebobinar 10 segundos">−10</button>
+        <button class="deckBtn" id="deckPlay" type="button" aria-label="Pausar">❚❚</button>
+        <button class="deckBtn" id="deckFwd" type="button" aria-label="Adelantar 10 segundos">+10</button>
+      </div>
+      <p class="deckTip">Gira el disco con el dedo: hacia atrás rebobina, hacia delante adelanta ↺ ↻</p>
     </div>
 
     <article id="letter" aria-live="polite">
@@ -1467,11 +1623,6 @@
       ctx.drawImage(notes, 0, 0, W * S, H * S);
       ctx.shadowBlur = 0;
 
-      /* Líneas de CRT */
-      ctx.fillStyle = "rgba(0, 0, 0, .18)";
-      for (let y = 0; y < H * S; y += Math.max(2, Math.round(S / 2))) {
-        ctx.fillRect(0, y, W * S, Math.max(1, dpr));
-      }
       ctx.restore();
 
       /* Línea de barrido brillante mientras aparece */
@@ -1635,6 +1786,7 @@
               if (wants) play();
             },
             onStateChange: event => {
+              if (event.data === YT.PlayerState.ENDED && api.onEnded) api.onEnded();
               if (event.data === YT.PlayerState.PLAYING) {
                 /* Si ella le da play a mano desde el principio, saltar al inicio elegido. */
                 if (!startedOnce) {
@@ -1714,7 +1866,32 @@
       }, 60);
     }
 
-    return { load, play, stop, fadeOut };
+    const api = {
+      load, play, stop, fadeOut,
+      onEnded: null,
+      pause() {
+        wants = false;
+        hideBox();
+        if (ready) player.pauseVideo();
+      },
+      /* Seguir desde donde iba (dentro del toque, válido para Safari). */
+      resume() {
+        if (!ready) return play();
+        wants = true;
+        player.unMute();
+        player.playVideo();
+      },
+      seek(seconds) {
+        if (ready) player.seekTo(seconds, true);
+      },
+      time() {
+        return ready && player.getCurrentTime ? player.getCurrentTime() || 0 : 0;
+      },
+      duration() {
+        return ready && player.getDuration ? player.getDuration() || 0 : 0;
+      }
+    };
+    return api;
   }
 
   /* "Summertime" desde el segundo 25 (visualizer oficial; de respaldo, el audio oficial). */
@@ -1981,15 +2158,30 @@
   const songCaption = $("songCaption");
 
   const PIVOT = { x: 350, y: 55 };
+  const CENTER = { x: 170, y: 150 };
   const ARM_PLAY = 28;      /* grados: la aguja queda sobre el vinilo */
   const ARM_MAX = 34;
   const ARM_THRESHOLD = 17; /* desde aquí, al soltar, cae sobre el disco */
+  const SECONDS_PER_TURN = 6; /* girar el disco una vuelta = 6 s de canción */
+  const SPIN_DEG_PER_SEC = 200; /* ~33⅓ rpm */
+
+  const vinyl = $("vinyl");
+  const deckControls = $("deckControls");
+  const playBtn = $("deckPlay");
+  const seekBar = $("deckSeek");
+  const timeNow = $("deckTime");
+  const timeTotal = $("deckTotal");
+  const scrubTag = $("scrubTag");
 
   let armAngle = 0;
   let dragging = false;
-  let playing = false;
+  let started = false;   /* la aguja ya cayó una vez (la carta ya salió) */
+  let playing = false;   /* el disco está girando y sonando */
   let secretRun = 0;
   let letterChars = [];
+  let vinylAngle = 0;
+  let scrub = null;
+  let seekDragging = false;
 
   function setArm(angle) {
     armAngle = Math.max(0, Math.min(ARM_MAX, angle));
@@ -2011,6 +2203,21 @@
     });
   }
 
+  function setVinyl(angle) {
+    vinylAngle = angle;
+    vinyl.setAttribute("transform", `rotate(${(angle % 360).toFixed(2)} ${CENTER.x} ${CENTER.y})`);
+  }
+
+  /* El disco gira mientras suena (y se detiene cuando ella lo sujeta). */
+  let lastSpin = 0;
+  function spinLoop(now) {
+    requestAnimationFrame(spinLoop);
+    const dt = lastSpin ? Math.min(.1, (now - lastSpin) / 1000) : 0;
+    lastSpin = now;
+    if (playing && !scrub && !reduceMotion) setVinyl(vinylAngle + SPIN_DEG_PER_SEC * dt);
+  }
+  requestAnimationFrame(spinLoop);
+
   function svgPoint(clientX, clientY) {
     const point = turntable.createSVGPoint();
     point.x = clientX;
@@ -2021,6 +2228,11 @@
   function angleFromPointer(clientX, clientY) {
     const p = svgPoint(clientX, clientY);
     return Math.atan2(-(p.x - PIVOT.x), p.y - PIVOT.y) * 180 / Math.PI;
+  }
+
+  function vinylAngleFromPointer(clientX, clientY) {
+    const p = svgPoint(clientX, clientY);
+    return Math.atan2(p.y - CENTER.y, p.x - CENTER.x) * 180 / Math.PI;
   }
 
   function buildLetter() {
@@ -2071,12 +2283,14 @@
 
   function resetSecret() {
     secretRun++;
-    playing = false;
+    started = false;
+    setPlaying(false);
     dragging = false;
-    turntable.classList.remove("playing", "dragging");
-    $("powerLed").setAttribute("opacity", ".35");
+    turntable.classList.remove("dragging");
     setArm(0);
+    setVinyl(0);
     needleHint.classList.remove("gone");
+    deckControls.classList.remove("show");
     letter.classList.remove("show");
     ceratiWrap.classList.remove("show");
     songCaption.classList.remove("show");
@@ -2084,17 +2298,95 @@
     cerati.stop();
   }
 
+  function setPlaying(on) {
+    playing = on;
+    turntable.classList.toggle("playing", on);
+    $("powerLed").setAttribute("opacity", on ? "1" : ".35");
+    playBtn.textContent = on ? "❚❚" : "▶";
+    playBtn.setAttribute("aria-label", on ? "Pausar" : "Reproducir");
+  }
+
+  /* ---- Controles: todos se llaman dentro de un toque (válido para Safari) ---- */
+
+  function resumeDeck() {
+    if (!started) {
+      dropNeedle();
+      return;
+    }
+    if (playing) return;
+    setPlaying(true);
+    lago.resume();
+    if (armAngle < ARM_THRESHOLD) animateArm(ARM_PLAY, 350);
+  }
+
+  function pauseDeck({ liftArm = false } = {}) {
+    if (!playing) return;
+    setPlaying(false);
+    lago.pause();
+    if (liftArm) animateArm(0, 400);
+  }
+
+  function seekBy(seconds) {
+    if (!started) return;
+    lago.seek(Math.max(0, lago.time() + seconds));
+    /* el disco da un giro rápido en la dirección del salto */
+    const from = vinylAngle;
+    const to = from + (seconds / SECONDS_PER_TURN) * 360;
+    const t0 = performance.now();
+    const step = now => {
+      const t = Math.min(1, (now - t0) / 450);
+      setVinyl(from + (to - from) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    showScrubTag(seconds);
+    updateProgress();
+  }
+
+  function formatTime(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
+  let tagTimer = 0;
+  function showScrubTag(seconds) {
+    const sign = seconds < 0 ? "⏪ −" : "⏩ +";
+    scrubTag.textContent = `${sign}${Math.abs(Math.round(seconds))} s`;
+    scrubTag.classList.add("show");
+    clearTimeout(tagTimer);
+    tagTimer = setTimeout(() => scrubTag.classList.remove("show"), 900);
+  }
+
+  function updateProgress() {
+    if (!started) return;
+    const total = lago.duration();
+    const now = scrub ? scrub.preview : lago.time();
+    if (total > 0) {
+      seekBar.max = Math.floor(total);
+      timeTotal.textContent = formatTime(total);
+    }
+    if (!seekDragging) {
+      seekBar.value = Math.floor(now);
+      timeNow.textContent = formatTime(now);
+    }
+    seekBar.style.setProperty("--p", total ? (seekBar.value / total * 100) + "%" : "0%");
+  }
+  setInterval(updateProgress, 250);
+
   /* Se llama dentro del gesto de soltar la aguja: aquí arranca la canción. */
   function dropNeedle() {
-    if (playing) return;
-    playing = true;
-    lago.play();
-    turntable.classList.add("playing");
-    $("powerLed").setAttribute("opacity", "1");
-    needleHint.classList.add("gone");
-    animateArm(ARM_PLAY, 350);
-    arm.setAttribute("aria-valuenow", "1");
-    revealLetter(++secretRun);
+    if (!started) {
+      started = true;
+      setPlaying(true);
+      lago.play();
+      needleHint.classList.add("gone");
+      deckControls.classList.add("show");
+      animateArm(ARM_PLAY, 350);
+      arm.setAttribute("aria-valuenow", "1");
+      revealLetter(++secretRun);
+      return;
+    }
+    resumeDeck();
   }
 
   async function revealLetter(run) {
@@ -2109,6 +2401,7 @@
       return;
     }
 
+    autoFollow = true;
     setTimeout(() => letter.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
 
     /* Cerati aparece y toca la guitarra mientras se escribe la carta. */
@@ -2118,6 +2411,15 @@
     songCaption.classList.add("show");
   }
 
+  /* La página sigue la carta mientras se escribe, salvo que ella
+     desplace la pantalla o use el tocadiscos. */
+  let autoFollow = true;
+  const stopFollowing = () => { autoFollow = false; };
+  window.addEventListener("wheel", stopFollowing, { passive: true });
+  window.addEventListener("touchmove", stopFollowing, { passive: true });
+  $("deck").addEventListener("pointerdown", stopFollowing);
+  deckControls.addEventListener("pointerdown", stopFollowing);
+
   async function typeLetter(run) {
     let lastScroll = 0;
     for (let i = 0; i < letterChars.length; i++) {
@@ -2126,7 +2428,7 @@
       span.classList.add("on");
 
       /* Mantener a la vista la línea que se está escribiendo. */
-      if (i - lastScroll > 60) {
+      if (autoFollow && i - lastScroll > 60) {
         lastScroll = i;
         span.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -2140,7 +2442,7 @@
     }
   }
 
-  /* Tocar la carta la completa de golpe (y también el dibujo). */
+  /* Tocar la carta la completa de golpe (Cerati sigue tocando). */
   function finishLetter() {
     secretRun++;
     letterChars.forEach(span => span.classList.add("on"));
@@ -2153,10 +2455,10 @@
     if (letterChars.some(span => !span.classList.contains("on"))) finishLetter();
   });
 
-  /* Arrastrar la aguja */
+  /* ---- Arrastrar la aguja: sobre el disco suena, fuera de él se pausa ---- */
   arm.addEventListener("pointerdown", event => {
-    if (playing) return;
     event.preventDefault();
+    event.stopPropagation();
     dragging = true;
     arm.classList.add("dragging");
     turntable.classList.add("dragging");
@@ -2177,7 +2479,9 @@
 
     if (armAngle >= ARM_THRESHOLD) {
       dropNeedle();
+      animateArm(ARM_PLAY, 300);
     } else {
+      pauseDeck();
       animateArm(0, 400);
     }
   }
@@ -2188,16 +2492,98 @@
     dragging = false;
     arm.classList.remove("dragging");
     turntable.classList.remove("dragging");
-    animateArm(0, 400);
+    animateArm(playing ? ARM_PLAY : 0, 400);
   });
 
   /* También con teclado (Enter o espacio). */
   arm.addEventListener("keydown", event => {
-    if ((event.key === "Enter" || event.key === " ") && !playing) {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      dropNeedle();
+      if (playing) pauseDeck({ liftArm: true });
+      else dropNeedle();
     }
   });
+
+  /* ---- Girar el disco con el dedo: hacia atrás rebobina, hacia delante adelanta ---- */
+  vinyl.addEventListener("pointerdown", event => {
+    if (!started) return;
+    event.preventDefault();
+    const a = vinylAngleFromPointer(event.clientX, event.clientY);
+    scrub = {
+      last: a,
+      total: 0,
+      startAngle: vinylAngle,
+      startTime: lago.time(),
+      preview: lago.time(),
+      wasPlaying: playing
+    };
+    if (playing) lago.pause();
+    turntable.classList.add("scrubbing");
+    vinyl.setPointerCapture?.(event.pointerId);
+  });
+
+  vinyl.addEventListener("pointermove", event => {
+    if (!scrub) return;
+    event.preventDefault();
+    const a = vinylAngleFromPointer(event.clientX, event.clientY);
+    let d = a - scrub.last;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    scrub.last = a;
+    scrub.total += d;
+    setVinyl(scrub.startAngle + scrub.total);
+    const total = lago.duration() || 600;
+    scrub.preview = Math.max(0, Math.min(total - 1, scrub.startTime + scrub.total / 360 * SECONDS_PER_TURN));
+    const delta = scrub.preview - scrub.startTime;
+    scrubTag.textContent = `${delta < 0 ? "⏪ −" : "⏩ +"}${Math.abs(Math.round(delta))} s`;
+    scrubTag.classList.add("show");
+    clearTimeout(tagTimer);
+    timeNow.textContent = formatTime(scrub.preview);
+  });
+
+  function endScrub() {
+    if (!scrub) return;
+    const { preview, wasPlaying } = scrub;
+    scrub = null;
+    turntable.classList.remove("scrubbing");
+    lago.seek(preview);
+    if (wasPlaying) lago.resume();
+    tagTimer = setTimeout(() => scrubTag.classList.remove("show"), 700);
+    updateProgress();
+  }
+
+  vinyl.addEventListener("pointerup", endScrub);
+  vinyl.addEventListener("pointercancel", endScrub);
+
+  /* ---- Botones y barra de progreso ---- */
+  $("deckBack").addEventListener("click", () => seekBy(-10));
+  $("deckFwd").addEventListener("click", () => seekBy(10));
+  $("deckStart").addEventListener("click", () => {
+    if (!started) return;
+    seekBy(-lago.time());
+  });
+  playBtn.addEventListener("click", () => {
+    if (playing) pauseDeck({ liftArm: true });
+    else resumeDeck();
+  });
+
+  seekBar.addEventListener("input", () => {
+    seekDragging = true;
+    timeNow.textContent = formatTime(seekBar.value);
+    seekBar.style.setProperty("--p", (seekBar.value / (seekBar.max || 1) * 100) + "%");
+  });
+  seekBar.addEventListener("change", () => {
+    seekDragging = false;
+    const delta = seekBar.value - lago.time();
+    lago.seek(Number(seekBar.value));
+    if (Math.abs(delta) >= 1) showScrubTag(delta);
+    if (!playing) resumeDeck();
+  });
+
+  lago.onEnded = () => {
+    setPlaying(false);
+    animateArm(0, 600);
+  };
 
   turntable.addEventListener("contextmenu", event => event.preventDefault());
 
