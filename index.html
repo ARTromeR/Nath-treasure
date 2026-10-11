@@ -237,7 +237,7 @@
 
   /* Reproductor invisible: está en la página (Safari no reproduce
      iframes con display:none) pero transparente y sin recibir toques. */
-  #music {
+  .music {
     position: fixed;
     left: 0;
     bottom: 0;
@@ -248,19 +248,19 @@
     pointer-events: none;
   }
 
-  #music iframe {
+  .music iframe {
     width: 100%;
     height: 100%;
     border: 0;
   }
 
-  #musicHint {
+  .musicHint {
     display: none;
   }
 
   /* Solo si el navegador bloquea el sonido: mini reproductor flotante
      para que ella le dé play con un toque. */
-  #music.blocked {
+  .music.blocked {
     left: 0;
     right: 0;
     margin: 0 auto;
@@ -277,7 +277,7 @@
     animation: pop .5s ease both;
   }
 
-  #music.blocked #musicHint {
+  .music.blocked .musicHint {
     display: block;
     margin: 2px 4px 8px;
     color: #f3ecef;
@@ -286,13 +286,13 @@
     text-align: center;
   }
 
-  #music.blocked #playerBox {
+  .music.blocked .playerBox {
     aspect-ratio: 16 / 9;
     border-radius: 8px;
     overflow: hidden;
   }
 
-  #music:not(.blocked) #playerBox {
+  .music:not(.blocked) .playerBox {
     width: 100%;
     height: 100%;
   }
@@ -347,6 +347,255 @@
     transform: translateY(-2px);
   }
 
+
+  /* Pista para el easter egg */
+  #eggHint {
+    max-height: 0;
+    margin: 0;
+    overflow: hidden;
+    opacity: 0;
+    color: #8c7f76;
+    font-size: 13px;
+    font-style: italic;
+    transition: opacity 1.2s ease, max-height 1.2s ease, margin 1.2s ease;
+  }
+
+  #eggHint.show {
+    max-height: 40px;
+    margin-top: 12px;
+    opacity: 1;
+  }
+
+  /* Mantener presionado a Gerard */
+  #sheetWrapper {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #holdGlow {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 246, 214, .75) 0, rgba(255, 205, 120, .45) 35%, rgba(255, 140, 160, .22) 55%, rgba(255, 140, 160, 0) 72%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    transform: scale(.3);
+    transition: opacity .25s ease, transform .25s ease;
+  }
+
+  #holdGlow.holding {
+    opacity: 1;
+    transform: scale(1.15);
+    transition: opacity 1.5s ease, transform 1.5s cubic-bezier(.3, .7, .3, 1);
+  }
+
+  body.shake #projectCard {
+    animation: shake .6s ease;
+  }
+
+  #projectCard.vanish,
+  #replayBtn.vanish {
+    opacity: 0;
+    transform: scale(.94);
+    filter: blur(6px);
+    transition: opacity .9s ease, transform .9s ease, filter .9s ease;
+    pointer-events: none;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    15% { transform: translate(-5px, 2px) rotate(-.6deg); }
+    30% { transform: translate(5px, -2px) rotate(.6deg); }
+    45% { transform: translate(-4px, 1px) rotate(-.4deg); }
+    60% { transform: translate(4px, -1px) rotate(.4deg); }
+    80% { transform: translate(-2px, 0) rotate(0); }
+  }
+
+  /* ================== Escena secreta ================== */
+  #secret {
+    display: none;
+    width: min(94vw, 640px);
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+
+  #secret.show {
+    display: flex;
+  }
+
+  #secret.visible {
+    opacity: 1;
+  }
+
+  #needleHint {
+    margin: 4px 0 14px;
+    color: #f3ecef;
+    font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+    font-size: clamp(16px, 2.6vw, 20px);
+    font-weight: 700;
+    text-align: center;
+    transition: opacity .6s ease;
+  }
+
+  #needleHint.gone {
+    opacity: 0;
+  }
+
+  #deck {
+    width: min(100%, 520px);
+    filter: drop-shadow(0 22px 30px rgba(0, 0, 0, .5));
+  }
+
+  #turntable {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  #vinyl {
+    transform-origin: 170px 150px;
+    animation: spin 1.8s linear infinite;
+    animation-play-state: paused;
+  }
+
+  #turntable.playing #vinyl {
+    animation-play-state: running;
+  }
+
+  #arm {
+    cursor: grab;
+  }
+
+  #arm.dragging {
+    cursor: grabbing;
+  }
+
+  #needlePulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: needlePulse 1.4s ease-out infinite;
+  }
+
+  #turntable.playing #needlePulse,
+  #turntable.dragging #needlePulse {
+    display: none;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes needlePulse {
+    from { opacity: .9; transform: scale(.6); }
+    to   { opacity: 0;  transform: scale(1.6); }
+  }
+
+  #letter {
+    display: none;
+    position: relative;
+    width: 100%;
+    margin-top: 26px;
+    padding: 26px 30px 28px;
+    background:
+      linear-gradient(rgba(247, 245, 238, .97), rgba(247, 245, 238, .97)),
+      repeating-linear-gradient(0deg, transparent 0, transparent 21px, rgba(91, 97, 96, .18) 22px);
+    box-shadow: 0 22px 34px rgba(0, 0, 0, .45);
+    cursor: pointer;
+  }
+
+  #letter.show {
+    display: block;
+    animation: rise .9s ease both;
+  }
+
+  #letter h2 {
+    margin: 0 0 14px;
+    color: var(--red);
+    text-align: center;
+    font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+    font-size: clamp(21px, 3.4vw, 28px);
+  }
+
+  #letterText p {
+    margin: 0 0 .9em;
+    color: var(--ink);
+    font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+    font-size: clamp(15px, 2.1vw, 18px);
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  #letterText p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* El texto completo ocupa su sitio desde el principio (sin saltos)
+     y cada letra se hace visible al "escribirse". */
+  #letterText .ch {
+    opacity: 0;
+  }
+
+  #letterText .ch.on {
+    opacity: 1;
+  }
+
+  #ceratiWrap {
+    display: none;
+    width: min(100%, 420px);
+    margin-top: 22px;
+    background: var(--paper);
+    box-shadow: 0 22px 34px rgba(0, 0, 0, .45);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #ceratiWrap.show {
+    display: block;
+    animation: rise .9s ease both;
+  }
+
+  #ceratiSheet {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  #songCaption {
+    margin: 14px 0 0;
+    color: #cdbfc6;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  #songCaption.show {
+    opacity: 1;
+  }
+
+  #backBtn {
+    margin-top: 18px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 999px;
+    padding: 10px 17px;
+    color: #f3ecef;
+    background: rgba(255, 255, 255, .08);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   @media (max-width: 600px) {
     body {
       justify-content: flex-start;
@@ -369,11 +618,25 @@
 
     #messagePanel::before { left: 11px; }
     #messagePanel::after  { right: 11px; }
+
+    #secret {
+      width: 100vw;
+      padding-top: 18px;
+    }
+
+    #letter {
+      padding: 22px 20px 24px;
+    }
+
+    #ceratiWrap {
+      width: calc(100vw - 48px);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    #sheetWrapper, #question, #noBtn { transition: none; }
+    #sheetWrapper, #question, #noBtn, #secret { transition: none; }
+    #vinyl, #needlePulse { animation: none; }
   }
 </style>
 </head>
@@ -382,6 +645,7 @@
   <main id="projectCard">
     <div id="sheetWrapper">
       <canvas id="sheet" role="img" aria-label="Pixel art de cinco chicos con chaquetas militares negras, uno con pelo platino en el centro, y un corazón rojo encima"></canvas>
+      <div id="holdGlow"></div>
     </div>
 
     <section id="messagePanel" aria-live="polite" aria-label="Mensaje especial">
@@ -394,15 +658,111 @@
           <button id="noBtn" class="choice" type="button" tabindex="-1">No</button>
         </div>
         <div id="answer" role="status">Mañana cena usted y yo, mi amor ❤</div>
+        <p id="eggHint">Psst… mantén presionado a Gerard 👀</p>
       </div>
     </section>
   </main>
 
   <button id="replayBtn" type="button">▶ Reiniciar dibujo</button>
 
-  <div id="music" aria-hidden="true">
-    <div id="musicHint">♫ Toca ▶ para escuchar nuestra canción</div>
-    <div id="playerBox"><div id="player"></div></div>
+  <section id="secret" aria-label="Sorpresa secreta">
+    <p id="needleHint">Arrastra la aguja hasta el vinilo 💿</p>
+
+    <div id="deck">
+      <svg id="turntable" viewBox="0 0 400 300" role="img" aria-label="Tocadiscos con un vinilo de Gustavo Cerati">
+        <defs>
+          <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5a3826"/>
+            <stop offset=".5" stop-color="#3f2619"/>
+            <stop offset="1" stop-color="#2c1a11"/>
+          </linearGradient>
+          <radialGradient id="shine" cx=".35" cy=".3" r=".8">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".16"/>
+            <stop offset=".4" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#9da3a8"/>
+            <stop offset=".5" stop-color="#eef0f2"/>
+            <stop offset="1" stop-color="#8d9398"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Mueble -->
+        <rect x="8" y="8" width="384" height="284" rx="20" fill="url(#wood)"/>
+        <rect x="8" y="8" width="384" height="284" rx="20" fill="none" stroke="#1a0f0a" stroke-width="3"/>
+
+        <!-- Plato -->
+        <circle cx="170" cy="150" r="130" fill="#1b1b1d"/>
+        <circle cx="170" cy="150" r="130" fill="none" stroke="#5c5f63" stroke-width="3"/>
+
+        <!-- Vinilo (gira) -->
+        <g id="vinyl">
+          <circle cx="170" cy="150" r="124" fill="#0c0c0d"/>
+          <g fill="none" stroke="#1e1e21" stroke-width="1.4">
+            <circle cx="170" cy="150" r="118"/><circle cx="170" cy="150" r="111"/>
+            <circle cx="170" cy="150" r="104"/><circle cx="170" cy="150" r="97"/>
+            <circle cx="170" cy="150" r="90"/><circle cx="170" cy="150" r="83"/>
+            <circle cx="170" cy="150" r="76"/><circle cx="170" cy="150" r="69"/>
+            <circle cx="170" cy="150" r="62"/><circle cx="170" cy="150" r="55"/>
+          </g>
+          <circle cx="170" cy="150" r="124" fill="url(#shine)"/>
+          <path d="M 98 70 A 108 108 0 0 1 150 44" stroke="#ffffff" stroke-opacity=".18" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <!-- Etiqueta -->
+          <circle cx="170" cy="150" r="44" fill="#e8dcc4"/>
+          <circle cx="170" cy="150" r="44" fill="none" stroke="#c9a03c" stroke-width="2"/>
+          <circle cx="170" cy="150" r="36" fill="none" stroke="#d7263d" stroke-width="1.2" stroke-dasharray="2 3"/>
+          <text x="170" y="134" text-anchor="middle" font-family="Georgia, serif" font-size="8.5" font-weight="700" letter-spacing="1" fill="#2a1a12">GUSTAVO</text>
+          <text x="170" y="144" text-anchor="middle" font-family="Georgia, serif" font-size="8.5" font-weight="700" letter-spacing="1" fill="#2a1a12">CERATI</text>
+          <text x="170" y="166" text-anchor="middle" font-family="Georgia, serif" font-size="9" font-style="italic" fill="#d7263d">Ahí vamos</text>
+          <text x="170" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="5.5" fill="#5a4a40">LADO A · 33⅓</text>
+          <circle cx="170" cy="150" r="3.5" fill="#9ea3a8"/>
+        </g>
+
+        <!-- Controles -->
+        <circle cx="342" cy="250" r="13" fill="#2a1a12" stroke="#9ea3a8" stroke-width="2"/>
+        <line x1="342" y1="250" x2="342" y2="240" stroke="#e8dcc4" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="306" cy="262" r="5" fill="#d7263d" id="powerLed" opacity=".35"/>
+        <text x="342" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#c9b8a6">33 · 45</text>
+
+        <!-- Brazo (se arrastra) -->
+        <g transform="translate(350 55)">
+          <circle r="22" fill="#2a1a12" stroke="#5c5f63" stroke-width="2"/>
+          <circle r="13" fill="url(#metal)"/>
+          <g id="arm" transform="rotate(0)" tabindex="0" role="slider" aria-label="Aguja del tocadiscos" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <rect x="-7" y="-34" width="14" height="22" rx="3" fill="#5c5f63"/>
+            <line x1="0" y1="0" x2="0" y2="168" stroke="#5c5f63" stroke-width="8" stroke-linecap="round"/>
+            <line x1="0" y1="0" x2="0" y2="168" stroke="#e3e6e9" stroke-width="5" stroke-linecap="round"/>
+            <rect x="-8" y="160" width="16" height="26" rx="3" fill="#2b2b2e" stroke="#9ea3a8" stroke-width="1.5"/>
+            <line x1="0" y1="186" x2="0" y2="191" stroke="#e8dcc4" stroke-width="2"/>
+            <circle id="needlePulse" cx="0" cy="176" r="16" fill="none" stroke="#e6cf8a" stroke-width="3"/>
+            <!-- Zona amplia para agarrar la aguja con el dedo -->
+            <circle cx="0" cy="172" r="38" fill="transparent"/>
+            <rect x="-16" y="0" width="32" height="170" fill="transparent"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <article id="letter" aria-live="polite">
+      <h2>¡Descubriste el secreto! ❤️</h2>
+      <div id="letterText"></div>
+    </article>
+
+    <div id="ceratiWrap">
+      <canvas id="ceratiSheet" role="img" aria-label="Pixel art de Gustavo Cerati tocando una guitarra roja"></canvas>
+    </div>
+    <p id="songCaption">♪ Lago en el cielo · Gustavo Cerati</p>
+    <button id="backBtn" type="button">↩ Volver</button>
+  </section>
+
+  <div class="music" id="music1" aria-hidden="true">
+    <div class="musicHint">♫ Toca ▶ para escuchar nuestra canción</div>
+    <div class="playerBox"><div id="player1"></div></div>
+  </div>
+
+  <div class="music" id="music2" aria-hidden="true">
+    <div class="musicHint">♫ Toca ▶ para escuchar la canción</div>
+    <div class="playerBox"><div id="player2"></div></div>
   </div>
 
 <script>
@@ -410,10 +770,10 @@
   "use strict";
 
   /* ================================================================
-     DIBUJO: cada string es una fila y cada carácter una celda.
+     DIBUJOS: cada string es una fila y cada carácter una celda.
      B negro · S piel · V piel pálida · Y rubio · P platino
      M castaño oscuro · N castaño · K rizo oscuro · G/g plata
-     O/o dorado · W blanco · R rojo · D sombra de ojos · L labios
+     O/o dorado · W blanco · R rojo · D vino · L labios
      . celda vacía
   ================================================================= */
   const ART = [
@@ -463,13 +823,46 @@
   const FIGURE_STARTS = [2, 14, 26, 38, 50];
   /* Filas por encima de esta son el corazón y las chispas. */
   const DECOR_ROWS = 9;
+  /* Gerard es el tercero; su figura mide 11 columnas. */
+  const GERARD = { col: FIGURE_STARTS[2], cols: 11, row: DECOR_ROWS, rows: ART.length - DECOR_ROWS };
 
-  const ROWS = ART.length;
-  const COLS = ART[0].length;
-
-  if (!ART.every(row => row.length === COLS)) {
-    throw new Error("Todas las filas de ART deben tener la misma longitud");
-  }
+  /* Cerati tocando la guitarra (escena secreta). */
+  const CERATI_ART = [
+    ".......g.............g..........",
+    "......gGg...........gGg.........",
+    ".......g.............g..........",
+    "....OO...................DDD....",
+    "....O........BBBBB.......D.D....",
+    "....O.......BMMMMMB......D.D....",
+    "...OO......BMMMMMMMB....DD.D....",
+    "...OO.....BMMMMMMMMMB...DDDD....",
+    "..........BMMMMMMMMMB...........",
+    ".....g....BMMSSSSSMMB...........",
+    "....gGg...BMSSSSSSSMB...........",
+    ".....g....BMSBSSSBSMB......BGB..",
+    "..........BMSSSSSSSMB......BBB..",
+    "...OO......BMSSLSSMB.......GBG..",
+    "...O........BSSSSSB........N....",
+    "...O.........BBBBB.......gNK....",
+    "..OO........BBWWWBB.....NKK.....",
+    "..OO.......BBBWDWBBB..SNK.......",
+    "..........BBBBWDWBBBBBBK.....OO.",
+    "..........BBBBBDBBBgNKS......O..",
+    "..........BBBBBDBNNKK........O..",
+    "..........BBBBBBgKKBB.......OO..",
+    "......BBB.BBBBNNKBBBB.......OO..",
+    ".....BRRRBRRBNKKBBBBB...........",
+    "....BRRRRRSRRBBBBBBBB...........",
+    "....BRWWRRRRRBBBBBBB............",
+    "....BRRRRRWWRBB.BBBB............",
+    "....BRRoRRRRRBB.BBB.............",
+    ".....BRRRRRRBBB.BBB.............",
+    "......BBBBBBBBB.BBB.............",
+    "............BBB.BBB.............",
+    "...........BBBB.BBBB............",
+    "................................",
+    "................................"
+  ];
 
   const COLORS = {
     B: "#11100f",
@@ -505,26 +898,36 @@
     g: "#8a8d91"
   };
 
-  const canvas = document.getElementById("sheet");
-  const ctx = canvas.getContext("2d", { alpha: false });
-  const wrapper = document.getElementById("sheetWrapper");
-  const replayBtn = document.getElementById("replayBtn");
-  const messagePanel = document.getElementById("messagePanel");
-  const finalMessage = document.getElementById("finalMessage");
-  const question = document.getElementById("question");
-  const yesBtn = document.getElementById("yesBtn");
-  const noBtn = document.getElementById("noBtn");
-
   const MESSAGE = "Tranquila, mi amor, sé que te encanta Gerard, pero este regalo no va de eso: va de sorprenderte con algo que espero que te guste. Este no es el único regalo que tengo para ti, y ojalá estar una vida entera llenándote de amor y fijándome en cada uno de los pequeños detalles que te llenan de felicidad. ❤";
 
-  /* Duración aproximada del dibujo, en milisegundos. */
+  const LETTER = [
+    "Sé lo mucho que te apasiona Gerard y el universo que representa para ti, pero hoy quise usarlo como el guardián de una sorpresa aún más nuestra.",
+    "Hace un tiempo, en medio de una conversación cualquiera, mencionaste casi al pasar que te encantaría tener un disco de Cerati en vinilo. Quizá para ti fue solo un comentario al aire, pero para mí fue un tesoro: una pista de las cosas que hacen vibrar tu mundo. Me fascina fijarme en cada uno de tus detalles, en las cosas que dices sin pensar y en lo que te hace sonreír cuando crees que nadie está mirando.",
+    "Por eso, aunque Gerard abra este camino, el verdadero regalo es este vinilo de Gustavo Cerati. Quiero que se convierta en la banda sonora de nuestros días, para que pongamos a girar sus canciones y para recordarte que me importa cada pequeño fragmento de lo que eres.",
+    "Gracias por dejarme prestarle atención a tu vida. Este es solo el primer acorde de todo lo que quiero construir a tu lado."
+  ];
+
+  /* Duración aproximada del dibujo principal, en milisegundos. */
   const DRAW_TIME = 9000;
+  /* Tiempo para mantener presionado a Gerard. */
+  const HOLD_TIME = 1500;
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const $ = id => document.getElementById(id);
+  const projectCard = $("projectCard");
+  const wrapper = $("sheetWrapper");
+  const replayBtn = $("replayBtn");
+  const messagePanel = $("messagePanel");
+  const finalMessage = $("finalMessage");
+  const question = $("question");
+  const yesBtn = $("yesBtn");
+  const noBtn = $("noBtn");
+  const eggHint = $("eggHint");
+  const holdGlow = $("holdGlow");
 
   let animationId = 0;
-  let cells = [];
-  let cellSize = 12;
-
-  wrapper.style.aspectRatio = `${COLS} / ${ROWS}`;
+  let drawingDone = false;
 
   /* Generador pseudoaleatorio estable:
      la irregularidad siempre queda igual para cada celda. */
@@ -533,63 +936,175 @@
     return value - Math.floor(value);
   }
 
-  function resizeCanvas() {
-    const rect = wrapper.getBoundingClientRect();
-    const cssWidth = rect.width;
-    const cssHeight = cssWidth * ROWS / COLS;
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-
-    canvas.width = Math.round(cssWidth * dpr);
-    canvas.height = Math.round(cssHeight * dpr);
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cellSize = cssWidth / COLS;
-
-    drawGrid();
-    drawAllPaintedCells();
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  function drawGrid() {
-    const width = cellSize * COLS;
-    const height = cellSize * ROWS;
+  function scrollToBottomOf(element) {
+    element.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
 
-    ctx.save();
-    ctx.clearRect(0, 0, width, height);
+  /* ================== Hoja cuadriculada con pixel art ==================
+     Sirve tanto para la banda como para Cerati. */
 
-    /* Papel cálido */
-    ctx.fillStyle = "#f7f5ee";
-    ctx.fillRect(0, 0, width, height);
+  function createSheet(canvas, sheetWrapper, art, orderCells) {
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const rows = art.length;
+    const cols = art[0].length;
 
-    /* Textura muy sutil de papel */
-    for (let i = 0; i < 1800; i++) {
-      const x = seededRandom(i + 11) * width;
-      const y = seededRandom(i + 713) * height;
-      const opacity = .018 + seededRandom(i + 37) * .022;
-      ctx.fillStyle = `rgba(95, 84, 68, ${opacity})`;
-      ctx.fillRect(x, y, .55, .55);
+    if (!art.every(row => row.length === cols)) {
+      throw new Error("Todas las filas del dibujo deben tener la misma longitud");
     }
 
-    /* Líneas de cuadrícula */
-    ctx.strokeStyle = "rgba(91, 97, 96, .42)";
-    ctx.lineWidth = Math.max(.5, cellSize * .045);
+    sheetWrapper.style.aspectRatio = `${cols} / ${rows}`;
 
-    for (let x = 0; x <= COLS; x++) {
-      const px = x * cellSize;
+    const sheet = { cols, rows, cellSize: 12, cells: [] };
+
+    sheet.build = () => {
+      const list = [];
+      art.forEach((row, y) => {
+        [...row].forEach((value, x) => {
+          if (value !== "." && COLORS[value]) list.push({ x, y, value, painted: false });
+        });
+      });
+      sheet.cells = orderCells ? orderCells(list) : list;
+    };
+
+    sheet.drawGrid = () => {
+      const size = sheet.cellSize;
+      const width = size * cols;
+      const height = size * rows;
+
+      ctx.save();
+      ctx.clearRect(0, 0, width, height);
+
+      /* Papel cálido */
+      ctx.fillStyle = "#f7f5ee";
+      ctx.fillRect(0, 0, width, height);
+
+      /* Textura muy sutil de papel */
+      for (let i = 0; i < 1800; i++) {
+        const x = seededRandom(i + 11) * width;
+        const y = seededRandom(i + 713) * height;
+        const opacity = .018 + seededRandom(i + 37) * .022;
+        ctx.fillStyle = `rgba(95, 84, 68, ${opacity})`;
+        ctx.fillRect(x, y, .55, .55);
+      }
+
+      /* Líneas de cuadrícula */
+      ctx.strokeStyle = "rgba(91, 97, 96, .42)";
+      ctx.lineWidth = Math.max(.5, size * .045);
+
+      for (let x = 0; x <= cols; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * size, 0);
+        ctx.lineTo(x * size, height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y <= rows; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * size);
+        ctx.lineTo(width, y * size);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    };
+
+    sheet.paintCell = cell => {
+      const { x, y, value } = cell;
+      const size = sheet.cellSize;
+      const left = x * size;
+      const top = y * size;
+
+      /* Pequeño desbordamiento para unir los cuadros como un marcador real. */
+      const bleed = Math.max(.2, size * .025);
+
+      const j1 = (seededRandom(x * 101 + y * 17 + 1) - .5) * size * .07;
+      const j2 = (seededRandom(x * 83 + y * 29 + 2) - .5) * size * .07;
+      const j3 = (seededRandom(x * 59 + y * 43 + 3) - .5) * size * .07;
+      const j4 = (seededRandom(x * 37 + y * 71 + 4) - .5) * size * .07;
+
+      ctx.save();
+      ctx.globalAlpha = value === "B" ? .985 : .96;
+      ctx.fillStyle = COLORS[value];
+
       ctx.beginPath();
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, height);
-      ctx.stroke();
-    }
+      ctx.moveTo(left - bleed + j1, top - bleed + j2);
+      ctx.lineTo(left + size + bleed + j2, top - bleed + j3);
+      ctx.lineTo(left + size + bleed + j3, top + size + bleed + j4);
+      ctx.lineTo(left - bleed + j4, top + size + bleed + j1);
+      ctx.closePath();
+      ctx.fill();
 
-    for (let y = 0; y <= ROWS; y++) {
-      const py = y * cellSize;
-      ctx.beginPath();
-      ctx.moveTo(0, py);
-      ctx.lineTo(width, py);
-      ctx.stroke();
-    }
+      /* Vetas de rotulador: apenas visibles, para evitar un acabado digital plano. */
+      ctx.globalAlpha = value === "B" ? .045 : .09;
+      ctx.strokeStyle = STREAK[value] || "#6d6258";
+      ctx.lineWidth = Math.max(.4, size * .025);
 
-    ctx.restore();
+      for (let stripe = 0; stripe < 3; stripe++) {
+        const offset = size * (.24 + stripe * .25);
+        const wave = (seededRandom(x * 211 + y * 97 + stripe) - .5) * 1.4;
+        ctx.beginPath();
+        ctx.moveTo(left, top + offset + wave);
+        ctx.lineTo(left + size, top + offset - wave);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    };
+
+    sheet.repaint = () => {
+      sheet.drawGrid();
+      sheet.cells.forEach(cell => {
+        if (cell.painted) sheet.paintCell(cell);
+      });
+    };
+
+    sheet.resize = () => {
+      const cssWidth = sheetWrapper.getBoundingClientRect().width;
+      if (!cssWidth) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+
+      canvas.width = Math.round(cssWidth * dpr);
+      canvas.height = Math.round(cssWidth * rows / cols * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sheet.cellSize = cssWidth / cols;
+      sheet.repaint();
+    };
+
+    sheet.reset = () => {
+      sheet.build();
+      sheet.drawGrid();
+    };
+
+    sheet.paintAll = () => {
+      sheet.cells.forEach(cell => cell.painted = true);
+      sheet.repaint();
+    };
+
+    /* Pinta varias celdas por cuadro para que el dibujo dure `duration` ms. */
+    sheet.animate = async (duration, isCancelled) => {
+      const tick = 16;
+      const perTick = Math.max(1, Math.ceil(sheet.cells.length / (duration / tick)));
+
+      for (let i = 0; i < sheet.cells.length; i += perTick) {
+        if (isCancelled()) return false;
+
+        for (let k = i; k < Math.min(i + perTick, sheet.cells.length); k++) {
+          sheet.cells[k].painted = true;
+          sheet.paintCell(sheet.cells[k]);
+        }
+
+        /* Pequeña variación para que parezca dibujado a mano. */
+        await sleep(tick + seededRandom(i + 900) * 6);
+      }
+      return true;
+    };
+
+    sheet.build();
+    return sheet;
   }
 
   function figureOf(x) {
@@ -600,84 +1115,31 @@
     return figure;
   }
 
-  function buildCells() {
-    const list = [];
-
-    ART.forEach((row, y) => {
-      [...row].forEach((value, x) => {
-        if (value === "." || !COLORS[value]) return;
-
-        const decor = y < DECOR_ROWS || value === "g" || value === "o";
-        /* Cada integrante se dibuja por turnos: primero el contorno negro
-           y luego los colores. El corazón y las chispas van al final. */
-        const group = decor ? FIGURE_STARTS.length : figureOf(x);
-        const layer = value === "B" ? 0 : 1;
-        list.push({ x, y, value, group, layer });
-      });
+  /* Cada integrante se dibuja por turnos: primero el contorno negro
+     y luego los colores. El corazón y las chispas van al final. */
+  function orderBand(list) {
+    list.forEach(cell => {
+      const decor = cell.y < DECOR_ROWS || cell.value === "g" || cell.value === "o";
+      cell.group = decor ? FIGURE_STARTS.length : figureOf(cell.x);
+      cell.layer = cell.value === "B" ? 0 : 1;
     });
-
-    list.sort((a, b) =>
+    return list.sort((a, b) =>
       a.group - b.group || a.layer - b.layer || a.y - b.y || a.x - b.x
     );
-
-    cells = list.map((cell, index) => ({ ...cell, index, painted: false }));
   }
 
-  function paintCell(cell) {
-    const { x, y, value } = cell;
-    const left = x * cellSize;
-    const top = y * cellSize;
-
-    /* Pequeño desbordamiento para unir los cuadros como un marcador real. */
-    const bleed = Math.max(.2, cellSize * .025);
-
-    const j1 = (seededRandom(x * 101 + y * 17 + 1) - .5) * cellSize * .07;
-    const j2 = (seededRandom(x * 83 + y * 29 + 2) - .5) * cellSize * .07;
-    const j3 = (seededRandom(x * 59 + y * 43 + 3) - .5) * cellSize * .07;
-    const j4 = (seededRandom(x * 37 + y * 71 + 4) - .5) * cellSize * .07;
-
-    ctx.save();
-    ctx.globalAlpha = value === "B" ? .985 : .96;
-    ctx.fillStyle = COLORS[value];
-
-    ctx.beginPath();
-    ctx.moveTo(left - bleed + j1, top - bleed + j2);
-    ctx.lineTo(left + cellSize + bleed + j2, top - bleed + j3);
-    ctx.lineTo(left + cellSize + bleed + j3, top + cellSize + bleed + j4);
-    ctx.lineTo(left - bleed + j4, top + cellSize + bleed + j1);
-    ctx.closePath();
-    ctx.fill();
-
-    /* Vetas de rotulador: apenas visibles, para evitar un acabado digital plano. */
-    ctx.globalAlpha = value === "B" ? .045 : .09;
-    ctx.strokeStyle = STREAK[value] || "#6d6258";
-    ctx.lineWidth = Math.max(.4, cellSize * .025);
-
-    for (let stripe = 0; stripe < 3; stripe++) {
-      const offset = cellSize * (.24 + stripe * .25);
-      const wave = (seededRandom(x * 211 + y * 97 + stripe) - .5) * 1.4;
-      ctx.beginPath();
-      ctx.moveTo(left, top + offset + wave);
-      ctx.lineTo(left + cellSize, top + offset - wave);
-      ctx.stroke();
-    }
-
-    ctx.restore();
+  /* Cerati: contorno, luego colores, y la guitarra y las notas al final. */
+  function orderCerati(list) {
+    const rank = { B: 0, M: 1, S: 1, L: 1, W: 1, D: 2, R: 3, N: 3, K: 3, g: 4, G: 4, o: 3, O: 4 };
+    return list.sort((a, b) =>
+      (rank[a.value] ?? 2) - (rank[b.value] ?? 2) || a.y - b.y || a.x - b.x
+    );
   }
 
-  function drawAllPaintedCells() {
-    cells.forEach(cell => {
-      if (cell.painted) paintCell(cell);
-    });
-  }
+  const band = createSheet($("sheet"), wrapper, ART, orderBand);
+  const cerati = createSheet($("ceratiSheet"), $("ceratiWrap"), CERATI_ART, orderCerati);
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  function scrollToBottomOf(element) {
-    element.scrollIntoView({ behavior: "smooth", block: "end" });
-  }
+  /* ================== Mensaje principal ================== */
 
   async function typeMessage(myAnimation) {
     finalMessage.textContent = "";
@@ -723,128 +1185,173 @@
     showQuestion();
   }
 
-  /* ================== Canción ==================
-     "Summertime" desde el segundo 25 con el reproductor de YouTube.
-     Se carga al aparecer la pregunta para que, al pulsar "Sí",
-     playVideo() se ejecute dentro del mismo toque (necesario en iPhone). */
+  /* ================== Canciones ==================
+     Reproductores de YouTube invisibles, cargados desde el principio para
+     que playVideo() se ejecute dentro del mismo toque (necesario en iPhone).
+     Si el navegador bloquea el sonido, aparece un mini reproductor. */
 
-  /* Visualizer oficial de la banda (se deja incrustar); de respaldo, el audio oficial. */
-  const SONG_IDS = ["oj1q7iQ1v2s", "LW7FxWXt3ok"];
-  const SONG_START = 25;
+  const ytQueue = [];
 
-  let player = null;
-  let playerReady = false;
-  let wantsMusic = false;
-  let songIndex = 0;
-  let startedOnce = false;
-  let blockedTimer = 0;
-  const music = document.getElementById("music");
-
-  function loadPlayer() {
-    if (player) return;
+  function whenYouTubeReady(callback) {
     if (window.YT && window.YT.Player) {
-      createPlayer();
+      callback();
       return;
     }
-    if (document.getElementById("ytApi")) return;
-    window.onYouTubeIframeAPIReady = createPlayer;
+    ytQueue.push(callback);
+    if ($("ytApi")) return;
+    window.onYouTubeIframeAPIReady = () => ytQueue.splice(0).forEach(fn => fn());
     const script = document.createElement("script");
     script.id = "ytApi";
     script.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(script);
   }
 
-  function createPlayer() {
-    if (player) return;
-    player = new YT.Player("player", {
-      videoId: SONG_IDS[songIndex],
-      host: "https://www.youtube-nocookie.com",
-      playerVars: {
-        start: SONG_START,
-        playsinline: 1,
-        rel: 0,
-        modestbranding: 1
-      },
-      events: {
-        onReady: () => {
-          playerReady = true;
-          if (wantsMusic) playSong();
-        },
-        onStateChange: event => {
-          /* Si ella le da play a mano desde el principio, saltar al 25. */
-          if (event.data === YT.PlayerState.PLAYING) {
-            if (!startedOnce) {
-              startedOnce = true;
-              if (player.getCurrentTime() < SONG_START - 2) player.seekTo(SONG_START, true);
+  function createSong({ mountId, boxId, ids, start }) {
+    const box = $(boxId);
+    let player = null;
+    let ready = false;
+    let wants = false;
+    let index = 0;
+    let startedOnce = false;
+    let blockedTimer = 0;
+    let fadeTimer = 0;
+
+    function hideBox() {
+      clearTimeout(blockedTimer);
+      box.classList.remove("blocked");
+      box.setAttribute("aria-hidden", "true");
+    }
+
+    function load() {
+      whenYouTubeReady(() => {
+        if (player) return;
+        player = new YT.Player(mountId, {
+          videoId: ids[index],
+          host: "https://www.youtube-nocookie.com",
+          playerVars: { start, playsinline: 1, rel: 0, modestbranding: 1 },
+          events: {
+            onReady: () => {
+              ready = true;
+              if (wants) play();
+            },
+            onStateChange: event => {
+              if (event.data === YT.PlayerState.PLAYING) {
+                /* Si ella le da play a mano desde el principio, saltar al inicio elegido. */
+                if (!startedOnce) {
+                  startedOnce = true;
+                  if (start && player.getCurrentTime() < start - 2) player.seekTo(start, true);
+                }
+                /* Ya suena: el reproductor vuelve a ser invisible. */
+                hideBox();
+              }
+            },
+            onError: () => {
+              /* Si un video no se deja incrustar, probar con el siguiente. */
+              if (index + 1 < ids.length) {
+                index++;
+                player.loadVideoById({ videoId: ids[index], startSeconds: start });
+              }
             }
-            /* Ya suena: el reproductor vuelve a ser invisible. */
-            clearTimeout(blockedTimer);
-            music.classList.remove("blocked");
           }
-        },
-        onError: () => {
-          /* Si un video no se deja incrustar, probar con el otro. */
-          if (songIndex + 1 < SONG_IDS.length) {
-            songIndex++;
-            player.loadVideoById({ videoId: SONG_IDS[songIndex], startSeconds: SONG_START });
-          }
+        });
+      });
+    }
+
+    function play() {
+      wants = true;
+      clearInterval(fadeTimer);
+      if (!ready) {
+        load();
+        return;
+      }
+      /* Todo dentro del mismo toque para que Safari lo permita. */
+      player.unMute();
+      player.setVolume(100);
+      player.seekTo(start, true);
+      player.playVideo();
+
+      /* Si en 2,5 s no está sonando, el navegador lo bloqueó:
+         mostrar el mini reproductor para que ella le dé play. */
+      clearTimeout(blockedTimer);
+      blockedTimer = setTimeout(() => {
+        const state = player.getPlayerState();
+        if (wants && state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+          box.classList.add("blocked");
+          box.setAttribute("aria-hidden", "false");
         }
-      }
-    });
-  }
-
-  function playSong() {
-    wantsMusic = true;
-    if (!playerReady) {
-      loadPlayer();
-      return;
+      }, 2500);
     }
-    /* Todo dentro del mismo toque de "Sí" para que Safari lo permita. */
-    player.unMute();
-    player.setVolume(100);
-    player.seekTo(SONG_START, true);
-    player.playVideo();
 
-    /* Si en 2,5 s no está sonando, el navegador lo bloqueó:
-       mostrar el mini reproductor para que ella le dé play. */
-    clearTimeout(blockedTimer);
-    blockedTimer = setTimeout(() => {
-      const state = player.getPlayerState();
-      if (wantsMusic && state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
-        music.classList.add("blocked");
-        music.setAttribute("aria-hidden", "false");
+    function stop() {
+      wants = false;
+      startedOnce = false;
+      clearInterval(fadeTimer);
+      hideBox();
+      if (ready) {
+        player.pauseVideo();
+        player.seekTo(start, true);
+        player.setVolume(100);
       }
-    }, 2500);
+    }
+
+    /* Baja el volumen poco a poco y luego pausa
+       (en iPhone el volumen no se puede cambiar: ahí simplemente pausa). */
+    function fadeOut(ms) {
+      wants = false;
+      hideBox();
+      if (!ready) return;
+      let volume = player.getVolume();
+      const step = Math.max(1, volume / (ms / 60));
+      clearInterval(fadeTimer);
+      fadeTimer = setInterval(() => {
+        volume -= step;
+        if (volume <= 0) {
+          clearInterval(fadeTimer);
+          stop();
+        } else {
+          player.setVolume(volume);
+        }
+      }, 60);
+    }
+
+    return { load, play, stop, fadeOut };
   }
 
-  function stopSong() {
-    wantsMusic = false;
-    startedOnce = false;
-    clearTimeout(blockedTimer);
-    music.classList.remove("blocked");
-    music.setAttribute("aria-hidden", "true");
-    if (playerReady) {
-      player.pauseVideo();
-      player.seekTo(SONG_START, true);
-    }
-  }
+  /* "Summertime" desde el segundo 25 (visualizer oficial; de respaldo, el audio oficial). */
+  const summertime = createSong({
+    mountId: "player1",
+    boxId: "music1",
+    ids: ["oj1q7iQ1v2s", "LW7FxWXt3ok"],
+    start: 25
+  });
+
+  /* "Lago en el cielo" de Gustavo Cerati (videos que permiten incrustarse). */
+  const lago = createSong({
+    mountId: "player2",
+    boxId: "music2",
+    ids: ["-tZuyGZ8_Sw", "jVfO8t4-X3Y"],
+    start: 0
+  });
 
   /* ================== Pregunta final ================== */
+
+  let hintTimer = 0;
 
   function showQuestion() {
     question.classList.add("show");
     question.setAttribute("aria-hidden", "false");
-    loadPlayer();
     setTimeout(() => scrollToBottomOf(question), 450);
   }
 
   function resetQuestion() {
     question.classList.remove("show", "answered");
-    stopSong();
+    clearTimeout(hintTimer);
+    eggHint.classList.remove("show");
+    summertime.stop();
     question.setAttribute("aria-hidden", "true");
     noBtn.classList.remove("runaway");
-    document.getElementById("noSpacer")?.remove();
-    document.getElementById("choices").appendChild(noBtn);
+    $("noSpacer")?.remove();
+    $("choices").appendChild(noBtn);
     noBtn.style.left = "";
     noBtn.style.top = "";
     noBtn.style.display = "";
@@ -944,16 +1451,16 @@
     if (noBtn.classList.contains("runaway")) runAway();
   });
 
-  function heartBurst() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const rect = yesBtn.getBoundingClientRect();
-    for (let i = 0; i < 26; i++) {
+  function heartBurst(rect, count = 26) {
+    if (reduceMotion) return;
+    for (let i = 0; i < count; i++) {
       const heart = document.createElement("span");
       heart.className = "floatHeart";
       heart.textContent = "♥";
-      heart.style.left = rect.left + rect.width / 2 + (Math.random() - .5) * 120 + "px";
-      heart.style.top = rect.top + (Math.random() - .5) * 30 + "px";
+      heart.style.left = rect.left + rect.width / 2 + (Math.random() - .5) * Math.max(120, rect.width) + "px";
+      heart.style.top = rect.top + rect.height / 2 + (Math.random() - .5) * Math.max(30, rect.height * .6) + "px";
       heart.style.fontSize = 14 + Math.random() * 22 + "px";
+      heart.style.color = Math.random() < .25 ? "#e6cf8a" : "";
       heart.style.setProperty("--dx", (Math.random() - .5) * 220 + "px");
       heart.style.setProperty("--rot", (Math.random() - .5) * 90 + "deg");
       heart.style.animationDelay = Math.random() * .5 + "s";
@@ -963,16 +1470,354 @@
   }
 
   yesBtn.addEventListener("click", () => {
-    playSong();
-    heartBurst();
+    summertime.play();
+    heartBurst(yesBtn.getBoundingClientRect());
     noBtn.style.display = "none";
-    document.getElementById("noSpacer")?.remove();
+    $("noSpacer")?.remove();
     question.classList.add("answered");
     setTimeout(() => scrollToBottomOf(question), 100);
     setTimeout(() => scrollToBottomOf(question), 900);
+
+    /* Una pista discreta para encontrar el secreto. */
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => eggHint.classList.add("show"), 4000);
   });
 
-  /* ================== Animación ================== */
+  /* ================== Easter egg: mantener presionado a Gerard ================== */
+
+  let holdTimer = 0;
+  let holdStart = null;
+  let secretOpen = false;
+
+  function gerardRect() {
+    const size = band.cellSize;
+    return {
+      left: GERARD.col * size,
+      top: GERARD.row * size,
+      width: GERARD.cols * size,
+      height: GERARD.rows * size
+    };
+  }
+
+  function isOnGerard(clientX, clientY) {
+    const box = wrapper.getBoundingClientRect();
+    const r = gerardRect();
+    const x = clientX - box.left;
+    const y = clientY - box.top;
+    return x >= r.left && x <= r.left + r.width && y >= r.top && y <= r.top + r.height;
+  }
+
+  function placeGlow() {
+    const r = gerardRect();
+    const size = Math.max(r.width, r.height) * .95;
+    holdGlow.style.width = size + "px";
+    holdGlow.style.height = size + "px";
+    holdGlow.style.left = r.left + r.width / 2 - size / 2 + "px";
+    holdGlow.style.top = r.top + r.height / 2 - size / 2 + "px";
+  }
+
+  function startHold(clientX, clientY) {
+    if (secretOpen || !drawingDone || holdStart) return;
+    holdStart = { x: clientX, y: clientY };
+    placeGlow();
+    holdGlow.classList.add("holding");
+    holdTimer = setTimeout(openSecret, HOLD_TIME);
+  }
+
+  function cancelHold() {
+    clearTimeout(holdTimer);
+    holdStart = null;
+    holdGlow.classList.remove("holding");
+  }
+
+  /* En el celular: tocar a Gerard no hace scroll ni abre menús,
+     para poder mantenerlo presionado. */
+  wrapper.addEventListener("touchstart", event => {
+    const touch = event.touches[0];
+    if (event.touches.length === 1 && drawingDone && !secretOpen && isOnGerard(touch.clientX, touch.clientY)) {
+      event.preventDefault();
+      startHold(touch.clientX, touch.clientY);
+    }
+  }, { passive: false });
+
+  wrapper.addEventListener("touchmove", event => {
+    if (!holdStart) return;
+    const touch = event.touches[0];
+    if (Math.hypot(touch.clientX - holdStart.x, touch.clientY - holdStart.y) > 14) cancelHold();
+  }, { passive: true });
+
+  wrapper.addEventListener("touchend", cancelHold);
+  wrapper.addEventListener("touchcancel", cancelHold);
+
+  /* Con ratón. */
+  wrapper.addEventListener("mousedown", event => {
+    if (event.button === 0 && isOnGerard(event.clientX, event.clientY)) {
+      event.preventDefault();
+      startHold(event.clientX, event.clientY);
+    }
+  });
+
+  wrapper.addEventListener("mousemove", event => {
+    if (holdStart && Math.hypot(event.clientX - holdStart.x, event.clientY - holdStart.y) > 14) cancelHold();
+  });
+
+  window.addEventListener("mouseup", cancelHold);
+  wrapper.addEventListener("contextmenu", event => event.preventDefault());
+
+  /* Cursor de "mano" al pasar sobre Gerard. */
+  wrapper.addEventListener("mousemove", event => {
+    wrapper.style.cursor = drawingDone && !secretOpen && isOnGerard(event.clientX, event.clientY) ? "pointer" : "";
+  });
+
+  /* ================== Escena secreta: el tocadiscos ================== */
+
+  const secret = $("secret");
+  const turntable = $("turntable");
+  const arm = $("arm");
+  const needleHint = $("needleHint");
+  const letter = $("letter");
+  const letterText = $("letterText");
+  const ceratiWrap = $("ceratiWrap");
+  const songCaption = $("songCaption");
+  const backBtn = $("backBtn");
+
+  const PIVOT = { x: 350, y: 55 };
+  const ARM_PLAY = 28;      /* grados: la aguja queda sobre el vinilo */
+  const ARM_MAX = 34;
+  const ARM_THRESHOLD = 17; /* desde aquí, al soltar, cae sobre el disco */
+
+  let armAngle = 0;
+  let dragging = false;
+  let playing = false;
+  let secretRun = 0;
+  let letterChars = [];
+
+  function setArm(angle) {
+    armAngle = Math.max(0, Math.min(ARM_MAX, angle));
+    arm.setAttribute("transform", `rotate(${armAngle.toFixed(2)})`);
+  }
+
+  function animateArm(to, ms) {
+    const from = armAngle;
+    const t0 = performance.now();
+    return new Promise(resolve => {
+      function frame(now) {
+        const t = Math.min(1, (now - t0) / ms);
+        const eased = 1 - Math.pow(1 - t, 3);
+        setArm(from + (to - from) * eased);
+        if (t < 1) requestAnimationFrame(frame);
+        else resolve();
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function svgPoint(clientX, clientY) {
+    const point = turntable.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    return point.matrixTransform(turntable.getScreenCTM().inverse());
+  }
+
+  function angleFromPointer(clientX, clientY) {
+    const p = svgPoint(clientX, clientY);
+    return Math.atan2(-(p.x - PIVOT.x), p.y - PIVOT.y) * 180 / Math.PI;
+  }
+
+  function buildLetter() {
+    letterText.textContent = "";
+    letterChars = [];
+    LETTER.forEach(paragraph => {
+      const p = document.createElement("p");
+      [...paragraph].forEach(char => {
+        const span = document.createElement("span");
+        span.className = "ch";
+        span.textContent = char;
+        p.appendChild(span);
+        letterChars.push(span);
+      });
+      letterText.appendChild(p);
+    });
+  }
+
+  async function openSecret() {
+    if (secretOpen) return;
+    secretOpen = true;
+    cancelHold();
+    animationId++;
+
+    const glowRect = holdGlow.getBoundingClientRect();
+    heartBurst(glowRect, 34);
+    summertime.fadeOut(1400);
+
+    if (!reduceMotion) {
+      document.body.classList.add("shake");
+      await sleep(600);
+      document.body.classList.remove("shake");
+    }
+
+    projectCard.classList.add("vanish");
+    replayBtn.classList.add("vanish");
+    await sleep(reduceMotion ? 0 : 900);
+
+    projectCard.style.display = "none";
+    replayBtn.style.display = "none";
+    resetSecret();
+    secret.classList.add("show");
+    window.scrollTo({ top: 0 });
+    void secret.offsetWidth;
+    secret.classList.add("visible");
+  }
+
+  function resetSecret() {
+    secretRun++;
+    playing = false;
+    dragging = false;
+    turntable.classList.remove("playing", "dragging");
+    $("powerLed").setAttribute("opacity", ".35");
+    setArm(0);
+    needleHint.classList.remove("gone");
+    letter.classList.remove("show");
+    ceratiWrap.classList.remove("show");
+    songCaption.classList.remove("show");
+    buildLetter();
+    cerati.reset();
+  }
+
+  /* Se llama dentro del gesto de soltar la aguja: aquí arranca la canción. */
+  function dropNeedle() {
+    if (playing) return;
+    playing = true;
+    lago.play();
+    turntable.classList.add("playing");
+    $("powerLed").setAttribute("opacity", "1");
+    needleHint.classList.add("gone");
+    animateArm(ARM_PLAY, 350);
+    arm.setAttribute("aria-valuenow", "1");
+    revealLetter(++secretRun);
+  }
+
+  async function revealLetter(run) {
+    await sleep(reduceMotion ? 0 : 900);
+    if (run !== secretRun) return;
+
+    letter.classList.add("show");
+    ceratiWrap.classList.add("show");
+    cerati.resize();
+    cerati.drawGrid();
+
+    if (reduceMotion) {
+      finishLetter();
+      return;
+    }
+
+    setTimeout(() => letter.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+
+    /* Cerati se dibuja mientras se escribe la carta. */
+    const typing = typeLetter(run);
+    const estimated = letterChars.length * 26;
+    const drawing = cerati.animate(Math.max(8000, estimated), () => run !== secretRun);
+    await Promise.all([typing, drawing]);
+    if (run !== secretRun) return;
+    songCaption.classList.add("show");
+  }
+
+  async function typeLetter(run) {
+    let lastScroll = 0;
+    for (let i = 0; i < letterChars.length; i++) {
+      if (run !== secretRun) return;
+      const span = letterChars[i];
+      span.classList.add("on");
+
+      /* Mantener a la vista la línea que se está escribiendo. */
+      if (i - lastScroll > 60) {
+        lastScroll = i;
+        span.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      const char = span.textContent;
+      let pause = 16 + seededRandom(i + 4100) * 14;
+      if (char === " ") pause = 30;
+      if (",:".includes(char)) pause = 180;
+      if (".".includes(char)) pause = 320;
+      await sleep(pause);
+    }
+  }
+
+  /* Tocar la carta la completa de golpe (y también el dibujo). */
+  function finishLetter() {
+    secretRun++;
+    letterChars.forEach(span => span.classList.add("on"));
+    cerati.paintAll();
+    songCaption.classList.add("show");
+  }
+
+  letter.addEventListener("click", () => {
+    if (letterChars.some(span => !span.classList.contains("on"))) finishLetter();
+  });
+
+  /* Arrastrar la aguja */
+  arm.addEventListener("pointerdown", event => {
+    if (playing) return;
+    event.preventDefault();
+    dragging = true;
+    arm.classList.add("dragging");
+    turntable.classList.add("dragging");
+    arm.setPointerCapture?.(event.pointerId);
+  });
+
+  arm.addEventListener("pointermove", event => {
+    if (!dragging) return;
+    event.preventDefault();
+    setArm(angleFromPointer(event.clientX, event.clientY));
+  });
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    arm.classList.remove("dragging");
+    turntable.classList.remove("dragging");
+
+    if (armAngle >= ARM_THRESHOLD) {
+      dropNeedle();
+    } else {
+      animateArm(0, 400);
+    }
+  }
+
+  arm.addEventListener("pointerup", endDrag);
+  arm.addEventListener("pointercancel", () => {
+    if (!dragging) return;
+    dragging = false;
+    arm.classList.remove("dragging");
+    turntable.classList.remove("dragging");
+    animateArm(0, 400);
+  });
+
+  /* También con teclado (Enter o espacio). */
+  arm.addEventListener("keydown", event => {
+    if ((event.key === "Enter" || event.key === " ") && !playing) {
+      event.preventDefault();
+      dropNeedle();
+    }
+  });
+
+  turntable.addEventListener("contextmenu", event => event.preventDefault());
+
+  backBtn.addEventListener("click", () => {
+    secretRun++;
+    lago.stop();
+    secret.classList.remove("visible", "show");
+    projectCard.style.display = "";
+    replayBtn.style.display = "";
+    projectCard.classList.remove("vanish");
+    replayBtn.classList.remove("vanish");
+    secretOpen = false;
+    window.scrollTo({ top: 0 });
+    band.resize();
+  });
+
+  /* ================== Animación principal ================== */
 
   function resetMessage() {
     finalMessage.textContent = "";
@@ -983,32 +1828,18 @@
   async function animate() {
     const myAnimation = ++animationId;
 
+    drawingDone = false;
     wrapper.classList.remove("finished");
     resetMessage();
-    buildCells();
-    drawGrid();
+    band.reset();
 
     /* Pausa inicial corta para ver la hoja. */
     await sleep(260);
 
-    /* Se pintan varias celdas por cuadro para que el dibujo dure ~9 s. */
-    const tick = 16;
-    const perTick = Math.max(1, Math.ceil(cells.length / (DRAW_TIME / tick)));
+    const finished = await band.animate(DRAW_TIME, () => myAnimation !== animationId);
+    if (!finished || myAnimation !== animationId) return;
 
-    for (let i = 0; i < cells.length; i += perTick) {
-      if (myAnimation !== animationId) return;
-
-      for (let k = i; k < Math.min(i + perTick, cells.length); k++) {
-        cells[k].painted = true;
-        paintCell(cells[k]);
-      }
-
-      /* Pequeña variación para que parezca dibujado a mano. */
-      await sleep(tick + seededRandom(i + 900) * 6);
-    }
-
-    if (myAnimation !== animationId) return;
-
+    drawingDone = true;
     await sleep(550);
     wrapper.classList.add("finished");
 
@@ -1022,18 +1853,18 @@
     animate();
   });
 
-  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("resize", () => {
+    band.resize();
+    if (secret.classList.contains("show")) cerati.resize();
+  });
 
-  buildCells();
-  resizeCanvas();
-  loadPlayer();
-
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  band.resize();
+  summertime.load();
+  lago.load();
 
   if (reduceMotion) {
-    cells.forEach(cell => cell.painted = true);
-    drawGrid();
-    drawAllPaintedCells();
+    band.paintAll();
+    drawingDone = true;
     finalMessage.textContent = MESSAGE;
     messagePanel.classList.add("visible", "completed");
     showQuestion();
