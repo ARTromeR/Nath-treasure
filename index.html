@@ -235,8 +235,8 @@
     animation: pop .7s cubic-bezier(.2, .85, .25, 1.35) both;
   }
 
-  /* Reproductor invisible: está en la página (Safari no reproduce
-     iframes con display:none) pero transparente y sin recibir toques. */
+  /* Reproductores invisibles: están en la página (Safari no reproduce
+     iframes ocultos con display:none) pero nunca se ven. */
   .music {
     position: fixed;
     left: 0;
@@ -244,57 +244,44 @@
     z-index: -1;
     width: 240px;
     height: 135px;
+    overflow: hidden;
     opacity: 0;
     pointer-events: none;
   }
 
-  .music iframe {
+  /* El reproductor mide siempre 240 × 240 (YouTube no reproduce en tamaños
+     muy pequeños); la capa solo deja asomar la parte que queda bajo el dedo. */
+  .playerBox {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+  }
+
+  .playerBox iframe {
     width: 100%;
     height: 100%;
     border: 0;
   }
 
-  .musicHint {
-    display: none;
-  }
-
-  /* Solo si el navegador bloquea el sonido: mini reproductor flotante
-     para que ella le dé play con un toque. */
-  .music.blocked {
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    bottom: calc(14px + env(safe-area-inset-bottom));
-    z-index: 40;
-    width: min(86vw, 300px);
-    height: auto;
-    padding: 10px;
-    border-radius: 14px;
-    background: #1d1820;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
-    opacity: 1;
+  /* Capa invisible encima de lo que ella va a tocar ("Sí" o el disco). */
+  .music.overlay {
+    z-index: 60;
+    opacity: .011;
     pointer-events: auto;
-    animation: pop .5s ease both;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .music.blocked .musicHint {
-    display: block;
-    margin: 2px 4px 8px;
-    color: #f3ecef;
-    font-size: 13px;
-    font-weight: 700;
-    text-align: center;
+  @keyframes hintPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(1.04); }
   }
 
-  .music.blocked .playerBox {
-    aspect-ratio: 16 / 9;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .music:not(.blocked) .playerBox {
-    width: 100%;
-    height: 100%;
+  #needleHint.pulse {
+    color: #e6cf8a;
+    animation: hintPulse 1.4s ease-in-out infinite;
   }
 
   #question.answered #choices,
@@ -610,6 +597,7 @@
 
   #arm {
     cursor: grab;
+    outline: none;
   }
 
   #arm.dragging {
@@ -922,12 +910,10 @@
   <div id="secretBg" aria-hidden="true"></div>
 
   <div class="music" id="music1" aria-hidden="true">
-    <div class="musicHint">♫ Toca ▶ para escuchar nuestra canción</div>
     <div class="playerBox"><div id="player1"></div></div>
   </div>
 
   <div class="music" id="music2" aria-hidden="true">
-    <div class="musicHint">♫ Toca ▶ para escuchar la canción</div>
     <div class="playerBox"><div id="player2"></div></div>
   </div>
 
@@ -1766,11 +1752,43 @@
     let startedOnce = false;
     let blockedTimer = 0;
     let fadeTimer = 0;
+    let overlayTarget = null;
+    let overlayRaf = 0;
+
+    /* El reproductor nunca se ve. En iPhone, Safari solo deja sonar el video
+       si el toque cae dentro del propio reproductor, así que cuando hace falta
+       se coloca invisible justo encima de lo que ella va a tocar. */
+    function followTarget() {
+      if (!overlayTarget) return;
+      const r = overlayTarget();
+      if (r) {
+        box.style.left = r.left + "px";
+        box.style.top = r.top + "px";
+        box.style.width = r.width + "px";
+        box.style.height = r.height + "px";
+      }
+      overlayRaf = requestAnimationFrame(followTarget);
+    }
+
+    function armOverlay(getRect) {
+      overlayTarget = getRect;
+      box.classList.add("overlay");
+      cancelAnimationFrame(overlayRaf);
+      followTarget();
+    }
 
     function hideBox() {
       clearTimeout(blockedTimer);
-      box.classList.remove("blocked");
-      box.setAttribute("aria-hidden", "true");
+      overlayTarget = null;
+      cancelAnimationFrame(overlayRaf);
+      box.classList.remove("overlay");
+      box.style.left = box.style.top = box.style.width = box.style.height = "";
+    }
+
+    function isActive() {
+      if (!ready) return false;
+      const state = player.getPlayerState();
+      return state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING;
     }
 
     function load() {
@@ -1787,13 +1805,19 @@
             },
             onStateChange: event => {
               if (event.data === YT.PlayerState.ENDED && api.onEnded) api.onEnded();
+              if (
+                (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.BUFFERING) &&
+                api.onStarted
+              ) {
+                api.onStarted();
+              }
               if (event.data === YT.PlayerState.PLAYING) {
                 /* Si ella le da play a mano desde el principio, saltar al inicio elegido. */
                 if (!startedOnce) {
                   startedOnce = true;
                   if (start && player.getCurrentTime() < start - 2) player.seekTo(start, true);
                 }
-                /* Ya suena: el reproductor vuelve a ser invisible. */
+                /* Ya suena: la capa invisible deja de estar bajo el dedo. */
                 hideBox();
               }
             },
@@ -1822,16 +1846,12 @@
       player.seekTo(start, true);
       player.playVideo();
 
-      /* Si en 2,5 s no está sonando, el navegador lo bloqueó:
-         mostrar el mini reproductor para que ella le dé play. */
+      /* Si en 2 s no está sonando, el navegador lo bloqueó: avisar
+         (sin mostrar ningún reproductor) para pedir un toque en el disco. */
       clearTimeout(blockedTimer);
       blockedTimer = setTimeout(() => {
-        const state = player.getPlayerState();
-        if (wants && state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
-          box.classList.add("blocked");
-          box.setAttribute("aria-hidden", "false");
-        }
-      }, 2500);
+        if (wants && !isActive() && api.onBlocked) api.onBlocked();
+      }, 2000);
     }
 
     function stop() {
@@ -1867,8 +1887,13 @@
     }
 
     const api = {
-      load, play, stop, fadeOut,
+      load, play, stop, fadeOut, armOverlay, isActive,
+      disarmOverlay: hideBox,
       onEnded: null,
+      onStarted: null,
+      onBlocked: null,
+      /* El iframe del reproductor (para saber si ella lo tocó). */
+      iframe: () => player && player.getIframe ? player.getIframe() : null,
       pause() {
         wants = false;
         hideBox();
@@ -1880,6 +1905,10 @@
         wants = true;
         player.unMute();
         player.playVideo();
+        clearTimeout(blockedTimer);
+        blockedTimer = setTimeout(() => {
+          if (wants && !isActive() && api.onBlocked) api.onBlocked();
+        }, 2000);
       },
       seek(seconds) {
         if (ready) player.seekTo(seconds, true);
@@ -1917,6 +1946,7 @@
   function showQuestion() {
     question.classList.add("show");
     question.setAttribute("aria-hidden", "false");
+    armYesOverlay();
     setTimeout(() => scrollToBottomOf(question), 450);
   }
 
@@ -2046,7 +2076,9 @@
     }
   }
 
-  yesBtn.addEventListener("click", () => {
+  function answerYes() {
+    if (question.classList.contains("answered")) return;
+    summertime.disarmOverlay();
     summertime.play();
     heartBurst(yesBtn.getBoundingClientRect());
     noBtn.style.display = "none";
@@ -2058,6 +2090,35 @@
     /* Una pista discreta para encontrar el secreto. */
     clearTimeout(hintTimer);
     hintTimer = setTimeout(() => eggHint.classList.add("show"), 4000);
+  }
+
+  yesBtn.addEventListener("click", answerYes);
+  /* Si el reproductor aún no cargó, el toque cae en la capa: responder igual. */
+  $("music1").addEventListener("click", answerYes);
+
+  /* Mientras la pregunta está a la vista, el reproductor invisible de
+     "Summertime" cubre el botón "Sí": el mismo toque que responde
+     arranca la canción (así funciona también en Safari del iPhone). */
+  function armYesOverlay() {
+    summertime.armOverlay(() => {
+      if (!question.classList.contains("show") || question.classList.contains("answered")) return null;
+      const r = yesBtn.getBoundingClientRect();
+      return { left: r.left, top: r.top, width: r.width, height: r.height };
+    });
+  }
+
+  summertime.onStarted = () => {
+    if (question.classList.contains("show") && !question.classList.contains("answered") && !secretOpen) {
+      answerYes();
+    }
+  };
+
+  /* Al tocar dentro del reproductor, la página pierde el foco: respuesta inmediata. */
+  window.addEventListener("blur", () => {
+    setTimeout(() => {
+      const frame = summertime.iframe();
+      if (frame && document.activeElement === frame) answerYes();
+    }, 0);
   });
 
   /* ================== Easter egg: mantener presionado a Gerard ================== */
@@ -2289,7 +2350,9 @@
     turntable.classList.remove("dragging");
     setArm(0);
     setVinyl(0);
-    needleHint.classList.remove("gone");
+    needleHint.textContent = "Arrastra la aguja hasta el vinilo 💿";
+    needleHint.classList.remove("gone", "pulse");
+    lago.disarmOverlay();
     deckControls.classList.remove("show");
     letter.classList.remove("show");
     ceratiWrap.classList.remove("show");
@@ -2579,6 +2642,35 @@
     if (Math.abs(delta) >= 1) showScrubTag(delta);
     if (!playing) resumeDeck();
   });
+
+  /* Safari bloqueó el sonido al soltar la aguja: el disco se queda quieto
+     y pide un toque; el reproductor invisible cubre el centro del disco. */
+  lago.onBlocked = () => {
+    setPlaying(false);
+    needleHint.textContent = "Toca el disco para que suene ♫";
+    needleHint.classList.remove("gone");
+    needleHint.classList.add("pulse");
+    lago.armOverlay(() => {
+      const r = turntable.getBoundingClientRect();
+      const s = r.width / 400;
+      const size = 230 * s;
+      return { left: r.left + CENTER.x * s - size / 2, top: r.top + CENTER.y * s - size / 2, width: size, height: size };
+    });
+  };
+
+  $("music2").addEventListener("click", () => resumeDeck());
+
+  lago.onStarted = () => {
+    if (needleHint.classList.contains("pulse")) {
+      needleHint.classList.remove("pulse");
+      needleHint.classList.add("gone");
+      lago.disarmOverlay();
+    }
+    if (started && !playing && !scrub) {
+      setPlaying(true);
+      if (armAngle < ARM_THRESHOLD) animateArm(ARM_PLAY, 350);
+    }
+  };
 
   lago.onEnded = () => {
     setPlaying(false);
