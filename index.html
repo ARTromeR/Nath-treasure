@@ -1256,9 +1256,9 @@
      sol de neón, borde de luz cian/magenta y líneas de televisor CRT. */
 
   function createNeoCerati(canvas) {
-    const W = 48;
-    const H = 58;
-    const SCALE = 4;
+    const W = 60;
+    const H = 72;
+    const SCALE = 3;
     const FPS = 8;
 
     const PAL = {
@@ -1268,7 +1268,11 @@
       S: "#f0b48c", /* piel */
       s: "#c98563", /* sombra de piel */
       J: "#16131d", /* chaqueta */
-      j: "#454a63", /* rombos plateados */
+      j: "#3f4459", /* rombos plateados */
+      i: "#7a8199", /* brillo de los rombos */
+      T: "#0b0a0f", /* camiseta */
+      K: "#050507", /* correa */
+      g: "#3a3d4c", /* brillo del barniz */
       P: "#c3c9d8", /* hombreras */
       p: "#7d8499",
       G: "#0c0c12", /* guitarra */
@@ -1276,8 +1280,8 @@
       w: "#d9dbe2", /* pastillas / clavijas */
       n: "#3a2418", /* mástil */
       f: "#ecdcb0", /* marcadores */
-      L: "#1d1c26", /* pantalón de cuero */
-      l: "#666b82", /* brillo del cuero */
+      L: "#3b3e4c", /* pantalón de cuero plateado */
+      l: "#a3a9bd", /* brillo del cuero */
       m: "#9aa0b4", /* micrófono */
       M: "#5d6275"  /* pie del micrófono */
     };
@@ -1329,140 +1333,173 @@
           rect(Math.round(x - (th - 1) / 2), Math.round(y - (th - 1) / 2), th, th, c);
         }
       };
+      const polygon = (pts, c) => {
+        const ys = pts.map(p => p[1]);
+        for (let y = Math.min(...ys); y <= Math.max(...ys); y++) {
+          for (let x = 0; x < W; x++) {
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+              const [xi, yi] = pts[i];
+              const [xj, yj] = pts[j];
+              if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            if (inside) set(x, y, c);
+          }
+        }
+      };
 
       const bob = [0, 0, 1, 1, 0, 0, 1, 1][t];   /* cabeceo al ritmo */
       const strum = [0, 1, 2, 1, 0, 1, 2, 1][t]; /* mano que rasguea */
-      const fret = t < 4 ? 0.62 : 0.5;           /* mano que se desliza por el mástil */
+      const fret = t < 4 ? 0.6 : 0.5;            /* mano que se desliza por el mástil */
 
-      /* Pie del micrófono */
-      line(10, 25, 10, 52, "M");
-      line(10, 52, 6, 55, "M");
-      line(10, 52, 14, 55, "M");
-      line(10, 25, 15, 20, "M");
-
-      /* Piernas: pantalón de cuero con brillo */
-      rect(16, 41, 6, 12, "L");
-      rect(23, 41, 6, 12, "L");
-      for (let y = 42; y < 52; y++) {
-        if (y % 4 !== 0) set(17, y, "l");
-        if (y % 4 !== 2) set(27, y, "l");
+      /* Piernas: pantalón de cuero plateado y brillante */
+      rect(21, 57, 8, 13, "L");
+      rect(31, 57, 8, 13, "L");
+      for (let y = 58; y < 69; y++) {
+        if (y % 5 !== 0) set(23, y, "l");
+        if (y % 5 !== 2) set(36, y, "l");
+        if (y % 3 === 0) set(26, y, "l");
       }
-      rect(15, 52, 7, 3, "k");
-      rect(23, 52, 7, 3, "k");
+      rect(20, 69, 9, 3, "k");
+      rect(31, 69, 9, 3, "k");
 
-      /* Torso: chaqueta con trama de rombos */
-      for (let y = 22; y <= 41; y++) {
-        const half = y < 27 ? 11 : Math.round(11 - (y - 27) * .22);
-        for (let x = 22 - half; x <= 22 + half; x++) {
-          const diamond = (x + y) % 5 === 0 || (x - y + 100) % 5 === 0;
-          set(x, y, diamond ? "j" : "J");
+      /* Torso: chaqueta negra con trama de rombos plateados */
+      for (let y = 26; y <= 57; y++) {
+        const half = y < 32 ? 14 : Math.round(14 - (y - 32) * .14);
+        for (let x = 30 - half; x <= 30 + half; x++) {
+          const a = (x + y) % 6 === 0;
+          const b = (x - y + 120) % 6 === 0;
+          set(x, y, a || b ? ((x + y) % 12 === 0 ? "i" : "j") : "J");
         }
       }
-      rect(19, 21, 7, 2, "J"); /* cuello alto */
+      /* camiseta negra en el cuello */
+      polygon([[25, 25], [34, 25], [32, 33], [27, 33]], "T");
 
-      /* Hombreras plateadas */
-      ellipse(13, 23.5, 3.5, 2.5, "P");
-      ellipse(31, 23.5, 3.5, 2.5, "P");
-      line(10, 25, 16, 25, "p");
-      line(28, 25, 34, 25, "p");
+      /* Correa de la guitarra (sobre su hombro izquierdo) */
+      line(38, 26, 39, 44, "K", 3);
+      line(37, 26, 38, 44, "p");
 
-      /* Brazo que rasguea (lado izquierdo de la imagen) */
-      line(12, 26, 10, 32, "J", 3);
-      line(10, 32, 17, 33 + strum, "J", 3);
+      /* Hombrera plateada grande y angulosa (su hombro derecho) */
+      polygon([[11, 28], [17, 24], [26, 24], [27, 29], [22, 36], [13, 36]], "P");
+      line(12, 35, 22, 35, "p");
+      line(22, 35, 26, 29, "p");
+      line(17, 25, 25, 25, "w");
+      for (let y = 27; y < 34; y += 2) line(15, y, 22, y - 2, "p");
 
-      /* Guitarra tipo superstrat negra con filete crema, inclinada
-         en la dirección del mástil (como en la foto). */
-      const n0 = { x: 25, y: 33 };
-      const n1 = { x: 41, y: 20 };
+      /* Brazo que rasguea */
+      line(15, 35, 14, 46, "J", 4);
+      line(14, 46, 23, 51 + strum, "J", 4);
+
+      /* Guitarra: cuerpo negro con filete crema, inclinada como en la foto */
+      const n0 = { x: 32, y: 48 };
+      const n1 = { x: 52, y: 30 };
       const ang = Math.atan2(n1.y - n0.y, n1.x - n0.x);
-      const ux = Math.cos(ang), uy = Math.sin(ang);   /* a lo largo del mástil */
-      const vx = -uy, vy = ux;                        /* perpendicular */
+      const ux = Math.cos(ang), uy = Math.sin(ang);
+      const vx = -uy, vy = ux;
+      const C = { x: 24, y: 54 };
       const tilted = (cx, cy, ra, rb, c) => {
-        for (let y = Math.floor(cy - 10); y <= cy + 10; y++) {
-          for (let x = Math.floor(cx - 10); x <= cx + 10; x++) {
+        for (let y = Math.floor(cy - 13); y <= cy + 13; y++) {
+          for (let x = Math.floor(cx - 13); x <= cx + 13; x++) {
             const a = ((x - cx) * ux + (y - cy) * uy) / ra;
             const b = ((x - cx) * vx + (y - cy) * vy) / rb;
             if (a * a + b * b <= 1) set(x, y, c);
           }
         }
       };
-      const at = (a, b) => ({ x: 19 + ux * a + vx * b, y: 37.5 + uy * a + vy * b });
-      const hornA = at(6, -3.6);
-      const hornB = at(5, 3.6);
+      const at = (a, b) => ({ x: C.x + ux * a + vx * b, y: C.y + uy * a + vy * b });
+      const hornA = at(8, -4.6);
+      const hornB = at(6.5, 4.6);
       [["b", 0], ["G", 1]].forEach(([c, d]) => {
-        tilted(19, 37.5, 8 - d, 5.6 - d, c);
-        tilted(hornA.x, hornA.y, 3.6 - d, 1.8 - d * .6, c);
-        tilted(hornB.x, hornB.y, 2.6 - d, 1.6 - d * .6, c);
+        tilted(C.x, C.y, 10.5 - d, 7 - d, c);
+        tilted(hornA.x, hornA.y, 4.4 - d, 2.2 - d * .6, c);
+        tilted(hornB.x, hornB.y, 3.2 - d, 2 - d * .6, c);
       });
-      /* pastillas (perpendiculares a las cuerdas) y puente */
-      [-1, 2.5].forEach(a => {
-        for (let b = -1.5; b <= 1.5; b += .5) {
+      /* brillo del barniz, pastillas, puente y perillas */
+      for (let a = -6; a <= -2; a++) {
+        const q = at(a, -4.4);
+        set(q.x, q.y, "g");
+      }
+      [-1.5, 3].forEach(a => {
+        for (let b = -2; b <= 2; b += .5) {
           const q = at(a, b);
           set(q.x, q.y, "w");
         }
       });
-      for (let b = -1.5; b <= 1.5; b += .5) {
-        const q = at(-4.5, b);
+      for (let b = -2; b <= 2; b += .5) {
+        const q = at(-5.5, b);
         set(q.x, q.y, "p");
       }
-      const knob = at(-3, 4);
-      set(knob.x, knob.y, "b");
+      [at(-4, 5), at(-1.5, 5.6)].forEach(q => set(q.x, q.y, "b"));
 
-      /* Mástil y clavijero (arriba a la derecha) */
-      line(n0.x, n0.y, n1.x, n1.y, "n", 2);
-      [.25, .45, .65, .85].forEach(k => set(n0.x + (n1.x - n0.x) * k, n0.y + (n1.y - n0.y) * k, "f"));
-      line(41, 20, 45, 16, "G", 3);
-      line(40, 21, 45, 15, "b");
-      set(43, 16, "w");
-      set(45, 18, "w");
-      set(41, 18, "w");
+      /* Mástil con filete crema y clavijero cromado */
+      line(n0.x, n0.y, n1.x, n1.y, "n", 3);
+      line(n0.x + 1, n0.y + 1, n1.x + 1, n1.y + 1, "b");
+      [.15, .3, .45, .6, .75, .9].forEach(k => set(n0.x + (n1.x - n0.x) * k, n0.y + (n1.y - n0.y) * k, "f"));
+      line(52, 30, 57, 24, "G", 3);
+      line(51, 31, 57, 23, "b");
+      [[54, 26], [56, 24], [53, 29], [55, 27]].forEach(([x, y], i) => set(x + (i % 2 ? 1 : -1), y, "w"));
 
       /* Mano que rasguea sobre las cuerdas */
-      rect(17, 33 + strum, 3, 2, "S");
-      set(19, 35 + strum, "s");
+      rect(22, 50 + strum, 4, 3, "S");
+      set(25, 52 + strum, "s");
 
       /* Brazo y mano en el mástil */
       const hx = n0.x + (n1.x - n0.x) * fret;
       const hy = n0.y + (n1.y - n0.y) * fret;
-      line(32, 26, 36, 31, "J", 3);
-      line(36, 31, hx + 1, hy + 2, "J", 3);
-      rect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3, "S");
-      set(Math.round(hx) + 1, Math.round(hy) + 1, "s");
+      line(42, 32, 47, 41, "J", 4);
+      line(47, 41, hx + 1, hy + 2, "J", 4);
+      rect(Math.round(hx) - 2, Math.round(hy) - 1, 4, 4, "S");
+      set(Math.round(hx) + 1, Math.round(hy) + 2, "s");
+      set(Math.round(hx) - 2, Math.round(hy) + 2, "s");
 
       /* Cuello y cabeza (cabecean) */
-      rect(20, 20, 5, 2, "s");
       const by = bob;
-      ellipse(22, 11 + by, 9.5, 8, "H");
-      for (let a = 0; a < 360; a += 32) {
+      rect(26, 23, 7, 3, "s");
+      /* pelo: rizos a la altura de las orejas */
+      ellipse(29, 13 + by, 9.5, 9, "H");
+      for (let a = 0; a < 360; a += 30) {
         const r = a * Math.PI / 180;
-        ellipse(22 + Math.cos(r) * 9.5, 11 + by + Math.sin(r) * 7.5, 2, 2, "H");
+        const ry = a > 20 && a < 160 ? 6 : 9; /* menos rizos por abajo */
+        ellipse(29 + Math.cos(r) * 9.5, 13 + by + Math.sin(r) * ry, 2.2, 2.2, "H");
       }
-      ellipse(22, 15 + by, 5, 6, "S");
-      /* rulos sobre la frente y a los lados */
-      ellipse(22, 9 + by, 6, 2.5, "H");
-      ellipse(18, 10 + by, 2, 2, "H");
-      ellipse(26, 10 + by, 2, 2, "H");
-      rect(16, 11 + by, 2, 6, "H");
-      rect(27, 11 + by, 2, 6, "H");
-      /* brillos de los rulos */
-      for (let y = 2; y < 20; y++) {
-        for (let x = 11; x < 34; x++) {
+      [[19, 9], [21, 4], [26, 2], [33, 2], [38, 5], [40, 10], [41, 17], [17, 16], [18, 21], [40, 21]].forEach(([x, y]) => ellipse(x, y + by, 1.6, 1.6, "H"));
+      /* cara alargada */
+      ellipse(29, 18 + by, 6, 7.5, "S");
+      /* rizos sobre la frente y a los lados de la cara */
+      ellipse(29, 10 + by, 7, 3, "H");
+      ellipse(24, 11 + by, 2.2, 2.2, "H");
+      ellipse(34, 11 + by, 2.2, 2.2, "H");
+      rect(22, 13 + by, 2, 8, "H");
+      rect(35, 13 + by, 2, 8, "H");
+      /* brillos de los rizos */
+      for (let y = 1; y < 24; y++) {
+        for (let x = 16; x < 43; x++) {
           const yy = y + by;
-          if (g[yy] && g[yy][x] === "H" && (x * 7 + y * 3) % 6 === 0) g[yy][x] = "h";
+          if (g[yy] && g[yy][x] === "H" && ((x * 3 + y * 5) % 7 === 0 || (x * 5 + y * 2) % 11 === 0)) g[yy][x] = "h";
         }
       }
-      /* cara cantando: ojos entrecerrados, boca abierta */
-      rect(19, 14 + by, 2, 1, "k");
-      rect(24, 14 + by, 2, 1, "k");
-      set(22, 16 + by, "s");
-      rect(21, 18 + by, 3, 1, "k");
-      set(22, 19 + by, t % 2 ? "k" : "s");
-      rect(18, 20 + by, 9, 1, "s");
+      /* cejas, ojos, nariz marcada y boca cantando */
+      rect(25, 14 + by, 3, 1, "H");
+      rect(31, 14 + by, 3, 1, "H");
+      rect(25, 16 + by, 2, 1, "k");
+      rect(32, 16 + by, 2, 1, "k");
+      set(26, 17 + by, "s");
+      set(32, 17 + by, "s");
+      line(29, 17 + by, 29, 20 + by, "s");
+      set(30, 20 + by, "s");
+      rect(28, 22 + by, 3, 1, "k");
+      set(29, 23 + by, t % 2 ? "k" : "s");
+      rect(25, 24 + by, 9, 1, "s");
 
-      /* Micrófono delante de la boca (no cabecea) */
-      rect(15, 18, 3, 2, "m");
-      set(16, 17, "w");
-      set(17, 20, "M");
+      /* Micrófono justo delante de la boca, con el pie en diagonal */
+      line(26, 24, 17, 40, "M");
+      line(17, 40, 17, 69, "M");
+      line(17, 69, 13, 72, "M");
+      line(17, 69, 21, 72, "M");
+      rect(25, 21, 3, 3, "m");
+      set(26, 21, "w");
+      set(25, 22, "k");
+      set(27, 23, "k");
 
       return g;
     }
@@ -1474,7 +1511,7 @@
         for (let x = 0; x < W; x++) {
           if (g[y][x]) continue;
           const near = (g[y][x - 1]) || (g[y][x + 1]) || (g[y - 1] && g[y - 1][x]) || (g[y + 1] && g[y + 1][x]);
-          if (near) out[y][x] = x < 22 ? CYAN : PINK;
+          if (near) out[y][x] = x < 30 ? CYAN : PINK;
         }
       }
       return out;
@@ -1511,13 +1548,13 @@
         cx.fillRect(0, y, W, 1);
       }
       /* estrellas que titilan */
-      [[4, 4], [40, 6], [7, 14], [44, 30], [3, 34], [36, 3], [30, 9]].forEach(([x, y], i) => {
+      [[5, 5], [50, 7], [8, 18], [55, 40], [4, 44], [45, 3], [40, 12], [12, 30]].forEach(([x, y], i) => {
         const on = Math.sin(time / 400 + i * 1.7) > -.2;
         cx.fillStyle = on ? (i % 2 ? CYAN : "#ffffff") : "#3a2a55";
         cx.fillRect(x, y, 1, 1);
       });
       /* sol con franjas que bajan lentamente */
-      const sun = { x: 24, y: 38, r: 18 };
+      const sun = { x: 30, y: 48, r: 22 };
       const shift = Math.floor(time / 180) % 4;
       for (let y = sun.y - sun.r; y <= sun.y + sun.r; y++) {
         if (y > sun.y && (y + shift) % 4 === 0) continue;
@@ -1531,11 +1568,11 @@
       }
       /* horizonte y suelo */
       cx.fillStyle = "#12081e";
-      cx.fillRect(0, 46, W, H - 46);
+      cx.fillRect(0, 60, W, H - 60);
       cx.fillStyle = PINK;
-      cx.fillRect(0, 46, W, 1);
+      cx.fillRect(0, 60, W, 1);
       cx.fillStyle = "rgba(255, 62, 165, .35)";
-      cx.fillRect(0, 47, W, 1);
+      cx.fillRect(0, 61, W, 1);
     }
 
     /* Notas musicales que salen de la guitarra */
@@ -1549,12 +1586,12 @@
       if (time - lastNote > 1100) {
         lastNote = time;
         const colors = [CYAN, PINK, "#ffd36e"];
-        flying.push({ born: time, x: 24 + (flying.length % 3) * 6, color: colors[flying.length % 3] });
+        flying.push({ born: time, x: 30 + (flying.length % 3) * 7, color: colors[flying.length % 3] });
       }
       for (let i = flying.length - 1; i >= 0; i--) {
         const n = flying[i];
         const age = (time - n.born) / 1000;
-        const y = Math.round(30 - age * 9);
+        const y = Math.round(40 - age * 11);
         const x = Math.round(n.x + Math.sin(age * 3) * 2 + age * 2);
         if (y < -6) {
           flying.splice(i, 1);
